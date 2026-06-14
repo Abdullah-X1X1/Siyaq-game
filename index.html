@@ -6,10 +6,65 @@
     <title>لعبة سياق</title>
     <!-- تشغيل مكتبة Tailwind للألوان والتصاميم -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    
+    <!-- استدعاء مكتبات React و Firebase الأساسية للتشغيل المباشر في المتصفح -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
+          "firebase/database": "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
+        }
+      }
+    </script>
 </head>
-<body class="bg-slate-900 text-white">
+<body class="bg-slate-900 text-white m-0 p-0">
     <div id="root"></div>
-    <!-- ربط مباشر للملف داخل مجلد البناء -->
-    <script type="module" src="App.jsx"></script>
+
+    <!-- كود اللعبة التفاعلي كامل سينفذ مباشرة هنا -->
+    <script type="text/babel" data-type="module">
+        import { initializeApp } from "firebase/app";
+        import { getDatabase, ref, set, onValue, get } from "firebase/database";
+
+        // إعدادات Firebase الخاصة بمشروعك المستخرجة من ملفك السابق
+        const firebaseConfig = {
+            authDomain: "siyaq-routine.firebaseapp.com",
+            databaseURL: "https://siyaq-routine-default-rtdb.firebaseio.com",
+            projectId: "siyaq-routine",
+            storageBucket: "siyaq-routine.appspot.com",
+            messagingSenderId: "1234567890",
+            appId: "1:123"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // هنا نقوم بجلب محتوى كود اللعبة التفاعلي والواجهات لتعمل فوراً
+        fetch('./src/App.jsx')
+            .then(response => response.text())
+            .then(code => {
+                // تنظيف الكود منImports الموديلز القياسية لأننا استدعيناها بالأعلى ليتوافق مع المتصفح المباشر
+                let cleanCode = code
+                    .replace(/import\s+React[\s\S]*?from\s+['"]react['"];?/g, '')
+                    .replace(/import\s+\{[\s\S]*?\}\s+from\s+['"]react['"];?/g, '')
+                    .replace(/import\s+\{[\s\S]*?\}\s+from\s+['"]firebase\/app['"];?/g, '')
+                    .replace(/import\s+\{[\s\S]*?\}\s+from\s+['"]firebase\/database['"];?/g, '')
+                    .replace(/export\s+default\s+function\s+App/g, 'function App');
+
+                // إضافة دالة رندر الأساسية في نهاية الملف وتشغيل السكريبت المدمج
+                cleanCode += \nconst root = ReactDOM.createRoot(document.getElementById('root')); root.render(<App />);;
+                
+                const script = document.createElement('script');
+                script.type = 'text/babel';
+                script.innerHTML = cleanCode;
+                document.body.appendChild(script);
+            })
+            .catch(err => {
+                console.error("Error loading app script:", err);
+                document.getElementById('root').innerHTML = '<div class="p-8 text-center text-red-400">فشل في تحميل ملف الواجهة الرئيسي المساعد.</div>';
+            });
+    </script>
 </body>
 </html>
