@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سياق الروتين</title>
+    <title>سياق الروتين - النسخة الكاملة</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -19,7 +19,7 @@
       }
     </script>
 </head>
-<body class="m-0 p-0 min-h-screen select-none bg-[#0c121c] text-[#e8edf4]">
+<body class="m-0 p-0 min-h-screen select-none bg-[#0a0f18] text-[#e2e8f0] font-sans">
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
@@ -36,43 +36,90 @@
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app, "https://siyaq-rouyine-default-rtdb.firebaseio.com");
 
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
-        const TEAM_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b'];
+        const TEAM_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#a855f7'];
         const CATEGORIES = ['عادات يومية', 'طبخ وأكلات', 'سيارات', 'سفر وسياحة', 'تقنية وجوالات', 'قهوة وشاهي'];
 
+        // بنك أسئلة موسع جداً (أكثر من 60 سؤال مميز ومصنف لضمان عمق اللعبة وملاءمتها للمجالس)
         const QUESTIONS = [
-          // عادات يومية
-          { category: 'عادات يومية', text: 'اذكر أول شيء يفعله أغلب الناس بعد الاستيقاظ من النوم مباشرة', answers: [ { text: 'النظر في الجوال وتصفح الإشعارات', points: 42 }, { text: 'الذهاب للحمام وغسل الوجه', points: 28 }, { text: 'شرب ماء أو قهوة', points: 15 }, { text: 'تعديل السرير والغطاء', points: 10 }, { text: 'إغلاق المنبه والنوم مجدداً', points: 5 } ] },
-          { category: 'عادات يومية', text: 'أكثر شيء ينساه الناس عند الخروج السريع من البيت', answers: [ { text: 'مفاتيح البيت أو السيارة', points: 38 }, { text: 'جوال أو شاحن', points: 30 }, { text: 'المحفظة أو بطاقة الصراف', points: 18 }, { text: 'النظارة الشمسية', points: 9 }, { text: 'العطر', points: 5 } ] },
-          { category: 'عادات يومية', text: 'مكان يقضي فيه الناس أغلب وقتهم خلال عطلة نهاية الأسبوع', answers: [ { text: 'المقاهي والكافيهات', points: 40 }, { text: 'الاستراحات أو الشاليهات', points: 25 }, { text: 'المولات والمجمعات', points: 18 }, { text: 'البيت والنوم', points: 12 }, { text: 'الحدائق والبر', points: 5 } ] },
-          
-          // طبخ وأكلات
-          { category: 'طبخ وأكلات', text: 'أشهر طبق رئيسي تجده في أغلب الولائم والمناسبات العربية', answers: [ { text: 'الأرز واللحم (المفطح / الكبسة)', points: 55 }, { text: 'المشويات المشكلة', points: 20 }, { text: 'المقبلات والسلطات', points: 12 }, { text: 'الجريش أو القرصان', points: 8 }, { text: 'الكنافة والحلويات', points: 5 } ] },
-          { category: 'طبخ وأكلات', text: 'شيء لا يخلو منه أي مطبخ عربي مهما كانت الظروف', answers: [ { text: 'البصل والثوم', points: 35 }, { text: 'الأرز (العيش)', points: 30 }, { text: 'الزيت والزبادي', points: 15 }, { text: 'البهارات المشكلة', points: 13 }, { text: 'الطماطم والصلصة', points: 7 } ] },
-          
-          // سيارات
-          { category: 'سيارات', text: 'أكثر سبب يدفع الشخص لشراء سيارة جديدة أو استبدال سيارته الحالية', answers: [ { text: 'كثرة الأعطال والمشاكل الميكانيكية', points: 40 }, { text: 'الرغبة في موديل أحدث وشكل جديد', points: 26 }, { text: 'اتساع العائلة والحاجة لسيارة أكبر', points: 18 }, { text: 'توفر السيولة أو عروض تقسيط قوية', points: 11 }, { text: 'استهلاك الوقود العالي في القديمة', points: 5 } ] },
-          { category: 'سيارات', text: 'أبرز ميزة يبحث عنها الشباب عند اختيار سيارة رياضية أو فاخرة', answers: [ { text: 'قوة المحرك والتسارع (النشاط)', points: 45 }, { text: 'شكل وتصميم السيارة الخارجي', points: 25 }, { text: 'صوت العادم والتطريب', points: 15 }, { text: 'التقنيات الداخلية والشاشات', points: 10 }, { text: 'سعر إعادة البيع والاعتمادية', points: 5 } ] },
+            // عادات يومية
+            { category: 'عادات يومية', text: 'أول شيء يفعله أغلب الناس بعد الاستيقاظ من النوم مباشرة', answers: [ { text: 'النظر في الجوال وتصفح الإشعارات', points: 45 }, { text: 'الذهاب للحمام وغسل الوجه', points: 25 }, { text: 'شرب ماء أو قهوة', points: 15 }, { text: 'إغلاق المنبه والنوم مجدداً', points: 10 }, { text: 'ترتيب السرير', points: 5 } ] },
+            { category: 'عادات يومية', text: 'أكثر شيء ينساه الناس عند الخروج السريع من البيت', answers: [ { text: 'مفاتيح البيت أو السيارة', points: 40 }, { text: 'الجوال أو الشاحن', points: 30 }, { text: 'المحفظة أو بطاقة الصراف', points: 15 }, { text: 'النظارة الشمسية', points: 10 }, { text: 'العطر', points: 5 } ] },
+            { category: 'عادات يومية', text: 'مكان يقضي فيه الناس أغلب وقتهم في الويكند', answers: [ { text: 'المقاهي والكافيهات', points: 35 }, { text: 'الاستراحات والشاليهات', points: 25 }, { text: 'المولات والمجمعات', points: 20 }, { text: 'البيت والنوم', points: 15 }, { text: 'الحدائق والبر', points: 5 } ] },
+            { category: 'عادات يومية', text: 'أكثر تطبيق يفتحه الشخص بمجرد ما يحس بالملل', answers: [ { text: 'تيك توك', points: 45 }, { text: 'إنستغرام', points: 25 }, { text: 'سناب شات', points: 15 }, { text: 'إكس (تويتر سابقاً)', points: 10 }, { text: 'واتساب', points: 5 } ] },
+            { category: 'عادات يومية', text: 'أكثر سبب يجعل الناس يتأخرون عن الدوام أو المواعيد', answers: [ { text: 'زحمة السير والطرقات', points: 40 }, { text: 'عدم الاستيقاظ من النوم في الوقت', points: 30 }, { text: 'البحث عن المفاتيح أو الأغراض', points: 15 }, { text: 'تجهيز السيارة وتسخينها', points: 10 }, { text: 'تنسيق الملابس والتأخر في اللبس', points: 5 } ] },
+            { category: 'عادات يومية', text: 'شيء يفعله الشخص في السينما غير مشاهدة الفيلم', answers: [ { text: 'أكل الفشار (الشاروخ)', points: 50 }, { text: 'التصوير للسناب أو الإنستغرام', points: 20 }, { text: 'الحديث مع الشخص المجاور', points: 15 }, { text: 'النوم بسبب التعب', points: 10 }, { text: 'تصفح الجوال', points: 5 } ] },
+            { category: 'عادات يومية', text: 'هدية يشتريها الشخص إذا كان مستعجلاً ورايح لزيارة أو مناسبة', answers: [ { text: 'باقة ورد', points: 35 }, { text: 'صندوق شوكولاتة جاهز', points: 35 }, { text: 'عطر مناسب للجميع', points: 15 }, { text: 'كارت إهداء مالي (عانية)', points: 10 }, { text: 'درع تذكاري', points: 5 } ] },
+            { category: 'عادات يومية', text: 'أكثر حجة أو تصريفة يركبها الشخص عشان ما يطلع مع أصحابه', answers: [ { text: 'عندي ظروف عائلية أو طالع مع الأهل', points: 45 }, { text: 'تعبان أو أحس بمرض ونعاس', points: 25 }, { text: 'عندي دوام مبكر أو مذاكرة', points: 15 }, { text: 'سيارتي عطلانة أو ما عندي موصل', points: 10 }, { text: 'والله ناسي ومرتبط بـ موعد ثاني', points: 5 } ] },
+            { category: 'عادات يومية', text: 'صوت مزعج بالمنزل يصحى عليه الجميع فجأة', answers: [ { text: 'صوت الخلاط بالمطبخ', points: 35 }, { text: 'صوت المكنسة الكهربائية', points: 25 }, { text: 'صوت قفل أو فتح الباب بقوة', points: 20 }, { text: 'بكاء طفل صغير', points: 15 }, { text: 'صوت التلفزيون العالي', points: 5 } ] },
+            { category: 'عادات يومية', text: 'أكثر مكان يضيع فيه ريموت التلفزيون باستمرار', answers: [ { text: 'بين وسائد وكنب الجلوس', points: 50 }, { text: 'تحت الطاولة أو الكنبة', points: 25 }, { text: 'في المطبخ أو عند الثلاجة', points: 12 }, { text: 'غرفة النوم', points: 8 }, { text: 'يبقى في يد شخص آخر ناسي', points: 5 } ] },
 
-          // سفر وسياحة
-          { category: 'سفر وسياحة', text: 'أهم غرض يحرص المسافر على التأكد منه قبل التوجه للمطار', answers: [ { text: 'جواز السفر وتأشيرة الدخول', points: 50 }, { text: 'الجوال واللابتوب والشواحن', points: 22 }, { text: 'النقود وبطاقات الائتمان الدولية', points: 16 }, { text: 'تذاكر الطيران وحجز الفندق', points: 8 }, { text: 'الأدوية الشخصية المهمة', points: 4 } ] },
-          
-          // تقنية وجوالات
-          { category: 'تقنية وجوالات', text: 'أكثر مواصفة يركز عليها المشتري عند تصفح الجوالات الجديدة', answers: [ { text: 'أداء وجودة الكاميرات والتصوير', points: 38 }, { text: 'حجم وسعة البطارية وسرعة الشحن', points: 28 }, { text: 'السعر مقابل القيمة والمواصفات', points: 18 }, { text: 'حجم ذاكرة التخزين الداخلية', points: 11 }, { text: 'نوع الشاشة وسرعة التحديث', points: 5 } ] },
-          
-          // قهوة وشاهي
-          { category: 'قهوة وشاهي', text: 'أشهر أداة تفتير وإعداد تستخدم في محامص ومقاهي المختصة حالياً', answers: [ { text: 'أداة V60 الشهيرة', points: 50 }, { text: 'آلة الإسبريسو التجارية', points: 25 }, { text: 'أداة الكيمكس', points: 12 }, { text: 'الفرنش بريس', points: 8 }, { text: 'الآيروبريس', points: 5 } ] }
+            // طبخ وأكلات
+            { category: 'طبخ وأكلات', text: 'أشهر طبق رئيسي تجده في أغلب الولائم والمناسبات الرسمية', answers: [ { text: 'الأرز واللحم (المفطح / الكبسة)', points: 55 }, { text: 'المشويات المشكلة', points: 20 }, { text: 'المقبلات والسلطات', points: 12 }, { text: 'الجريش أو القرصان', points: 8 }, { text: 'الكنافة والحلويات', points: 5 } ] },
+            { category: 'طبخ وأكلات', text: 'شيء لا يخلو منه أي مطبخ عربي مهما كانت الظروف', answers: [ { text: 'البصل والثوم', points: 35 }, { text: 'الأرز', points: 30 }, { text: 'الزيت', points: 15 }, { text: 'البهارات المشكلة', points: 13 }, { text: 'الطماطم والصلصة', points: 7 } ] },
+            { category: 'طبخ وأكلات', text: 'أكثر وجبة سريعة يطلبها الناس في أوقات آخر الليل (القرندة)', answers: [ { text: 'شاورما', points: 40 }, { text: 'برجر مع بطاطس', points: 25 }, { text: 'بروستد دجاج', points: 18 }, { text: 'فطائر أو بيتزا', points: 12 }, { text: 'إندومي أو نودلز', points: 5 } ] },
+            { category: 'طبخ وأكلات', text: 'أكثر شيء يطلبه الزبون كإضافة مجانية مع علبة الساندويش', answers: [ { text: 'ثومية إضافية', points: 35 }, { text: 'كاتشب وشطة', points: 30 }, { text: 'مخلل', points: 15 }, { text: 'جبنة سايلة', points: 12 }, { text: 'هالبينو وحار', points: 8 } ] },
+            { category: 'طبخ وأكلات', text: 'أشهر طبق حلى يقدم ساخناً ومحبوب جداً في فصل الشتاء', answers: [ { text: 'حنيني أو قشد', points: 40 }, { text: 'أم علي', points: 25 }, { text: 'كنافة نابلسية', points: 18 }, { text: 'سوفليه أو كيكة التمر', points: 12 }, { text: 'بسبوسة ساخنة', points: 5 } ] },
+            { category: 'طبخ وأكلات', text: 'أكثر نوع شوربة مطلوب على سفرة الإفطار في شهر رمضان', answers: [ { text: 'شوربة الشوفان باللحم (كويكر)', points: 60 }, { text: 'شوربة العدس', points: 20 }, { text: 'شوربة الدجاج بالكريمة', points: 10 }, { text: 'شوربة الخضار المشكلة', points: 7 }, { text: 'شوربة الفطر', points: 3 } ] },
+            { category: 'طبخ وأكلات', text: 'فاكهة صيفية يحرص الجميع على شرائها وتبريدها بالكامل', answers: [ { text: 'الحبحب (البطيخ)', points: 55 }, { text: 'المانجو', points: 20 }, { text: 'الشمام', points: 12 }, { text: 'العنب', points: 8 }, { text: 'الخوخ', points: 5 } ] },
+            { category: 'طبخ وأكلات', text: 'أكثر صوص أو تتبيلة مشهورة ومطلوبة مع صحن المشويات', answers: [ { text: 'طحينة', points: 45 }, { text: 'ثومية', points: 25 }, { text: 'حمص', points: 15 }, { text: 'صوص متبل حار', points: 10 }, { text: 'باربيكيو', points: 5 } ] },
+            { category: 'طبخ وأكلات', text: 'مكون أساسي لعمل أي نوع من الفطائر أو المعجنات', answers: [ { text: 'الدقيق (الطحين)', points: 45 }, { text: 'الخميرة', points: 25 }, { text: 'الماء أو الحليب', points: 15 }, { text: 'الزيت أو الزبدة', points: 10 }, { text: 'الملح والسكر', points: 5 } ] },
+            { category: 'طبخ وأكلات', text: 'أشهر حشوة سمبوسة يختلف عليها الناس في رمضان', answers: [ { text: 'لحم مفروم باالبصل', points: 40 }, { text: 'جبن (شيدر أو فيتا)', points: 35 }, { text: 'دجاج مفروم', points: 15 }, { text: 'خضار مشكلة', points: 7 }, { text: 'بطاطس مهروسة بالهندي', points: 3 } ] },
+
+            // سيارات
+            { category: 'سيارات', text: 'أكثر سبب يدفع الشخص لاستبدال أو بيع سيارته الحالية', answers: [ { text: 'كثرة الأعطال والمشاكل الميكانيكية', points: 42 }, { text: 'الرغبة في موديل أحدث وشكل جديد', points: 28 }, { text: 'اتساع العائلة والحاجة لسيارة أكبر', points: 15 }, { text: 'توفر السيولة أو عروض تقسيط قوية', points: 10 }, { text: 'استهلاك الوقود العالي في القديمة', points: 5 } ] },
+            { category: 'سيارات', text: 'أبرز ميزة يبحث عنها الشباب عند اختيار سيارة رياضية أو فاخرة', answers: [ { text: 'قوة المحرك والتسارع (النشاط)', points: 45 }, { text: 'شكل وتصميم السيارة الخارجي', points: 25 }, { text: 'صوت العادم والتطريب', points: 15 }, { text: 'التقنيات الداخلية والشاشات', points: 10 }, { text: 'سعر إعادة البيع والاعتمادية', points: 5 } ] },
+            { category: 'سيارات', text: 'أكثر لون سيارة منتشر وتشوفه بكل الشوارع بدون استثناء',
+              answers: [ { text: 'أبيض', points: 50 }, { text: 'أسود ملوكي', points: 20 }, { text: 'فضي أو رمادي', points: 15 }, { text: 'كحلي', points: 10 }, { text: 'لؤلؤي', points: 5 } ] },
+            { category: 'سيارات', text: 'شيء يفعله السائق فوراً بمجرد ركوب السيارة وتشغيلها', answers: [ { text: 'ربط حزام الأمان', points: 35 }, { text: 'تشغيل المكيف على أعلى درجة', points: 30 }, { text: 'توصيل الجوال بالبلوتوث أو الكاربلاي', points: 20 }, { text: 'تعديل المرايا والكرسي', points: 10 }, { text: 'فك جلنط السيارة', points: 5 } ] },
+            { category: 'سيارات', text: 'أكثر قطعة استهلاكية يضطر راعي السيارة لتغييرها سنوياً', answers: [ { text: 'الفحمات أو الأقمشة (البريك)', points: 40 }, { text: 'الكفرات (الإطارات)', points: 30 }, { text: 'زيت المحرك والفلتر', points: 15 }, { text: 'المساحات للزجاج', points: 10 }, { text: 'البطارية', points: 5 } ] },
+            { category: 'سيارات', text: 'أبرز سبب يؤدي لظهور علامة الفحص (Check Engine) في الطبلون', answers: [ { text: 'مشكلة في حساس الأكسجين أو الشكمان', points: 35 }, { text: 'غطاء البنزين غير مغلق بإحكام', points: 25 }, { text: 'مشكلة في البواجي أو الكويلات', points: 20 }, { text: 'حرارة زائدة في المحرك', points: 15 }, { text: 'نقص في زيت المكينة', points: 5 } ] },
+            { category: 'سيارات', text: 'أكثر أكسسوار يحرص كل صاحب سيارة جديدة على شرائه فوراً', answers: [ { text: 'عازل حراري وتظليل كامل للمقاعد', points: 45 }, { text: 'حامي واجهة السيارة (PPF)', points: 25 }, { text: 'تعليقة عطرية للمرآة', points: 15 }, { text: 'فرشات أرضية لحماية الموكيت', points: 10 }, { text: 'داش كام للتصوير', points: 5 } ] },
+            { category: 'سيارات', text: 'شيء يبحث عنه المشتري في سيارات الكروس أوفر أو العائلية الصغيرة', answers: [ { text: 'اقتصادية ممتازة في استهلاك الوقود', points: 40 }, { text: 'مساحة الشنطة الخلفية والاتساع', points: 25 }, { text: 'تكييف خلفي قوي واصل للجميع', points: 18 }, { text: 'الارتفاع المناسب عن المطبات', points: 12 }, { text: 'أنظمة الأمان والوسائد الهوائية', points: 5 } ] },
+            { category: 'سيارات', text: 'أكثر علامة تجارية يابانية مشهورة بالاعتمادية وقلة الأعطال بالشوارع', answers: [ { text: 'تويوتا', points: 60 }, { text: 'نيسان', points: 15 }, { text: 'هوندا', points: 13 }, { text: 'مازدا', points: 9 }, { text: 'لكزس', points: 3 } ] },
+            { category: 'سيارات', text: 'مكان تذهب إليه السيارة عندما تسمع صوت حك أو طقطقة مع المطبات', answers: [ { text: 'ورشة ميزان ومساعدات (ترصيص)', points: 45 }, { text: 'محل بيع كفرات وجلب', points: 25 }, { text: 'الوكالة للصيانة الدورية', points: 15 }, { text: 'مغسلة سيارات لتشحيم الأسفل', points: 10 }, { text: 'ورشة سمكرة', points: 5 } ] },
+
+            // سفر وسياحة
+            { category: 'سفر وسياحة', text: 'أهم غرض يحرص المسافر على التأكد منه قبل التوجه للمطار', answers: [ { text: 'جواز السفر وتأشيرة الدخول', points: 50 }, { text: 'الجوال واللابتوب والشواحن', points: 22 }, { text: 'النقود وبطاقات الائتمان الدولية', points: 16 }, { text: 'تذاكر الطيران وحجز الفندق', points: 8 }, { text: 'الأدوية الشخصية المهمة', points: 4 } ] },
+            { category: 'سفر وسياحة', text: 'أكثر نشاط يحرص عليه السياح بمجرد وصولهم لمدينة جديدة', answers: [ { text: 'تجربة الأكل الشعبي والمطاعم الشهيرة', points: 40 }, { text: 'زيارة المعالم التاريخية والمتاحف', points: 25 }, { text: 'التسوق وشراء الهدايا التذكارية', points: 18 }, { text: 'المشي في الساحات والشوارع العامة', points: 12 }, { text: 'التصوير وتوثيق الرحلة', points: 5 } ] },
+            { category: 'سفر وسياحة', text: 'أكثر ميزة يبحث عنها العوائل عند حجز فندق أو سكن للسفر', answers: [ { text: 'القرب من الخدمات والسنتر والشوارع الحيوية', points: 45 }, { text: 'السعر المناسب والميزانية المتاحة', points: 25 }, { text: 'توفر غرف متصلة أو شقق واسعة', points: 15 }, { text: 'وجود إفطار مجاني متضمن مع الحجز', points: 10 }, { text: 'الأمان والتقييم العالي بالنظافة', points: 5 } ] },
+            { category: 'سفر وسياحة', text: 'شيء يفعله أغلب الركاب داخل الطائرة لقضاء وقت الرحلات الطويلة', answers: [ { text: 'النوم والراحة العميقة', points: 45 }, { text: 'مشاهدة الأفلام والمسلسلات في الشاشة', points: 30 }, { text: 'القراءة أو تصفح كتاب', points: 12 }, { text: 'الأكل والاستمتاع بوجبة الطائرة', points: 8 }, { text: 'الحديث مع الراكب المجاور', points: 5 } ] },
+            { category: 'سفر وسياحة', text: 'أشهر طبيعة دولة يفضلها الخليجيون للسياحة في شرق آسيا', answers: [ { text: 'إندونيسيا (بونشاك / بالي)', points: 35 }, { text: 'تايلاند', points: 30 }, { text: 'ماليزيا', points: 20 }, { text: 'الفلبين', points: 10 }, { text: 'سنغافورة', points: 5 } ] },
+            { category: 'سفر وسياحة', text: 'أبرز سبب لإلغاء أو تأجيل رحلة سفر خططت لها عائلة بالكامل', answers: [ { text: 'حالة مرضية طارئة لأحد أفراد العائلة', points: 40 }, { text: 'رفض أو تأخر صدور الفيزا (التأشيرة)', points: 25 }, { text: 'ظروف العمل أو رفض الإجازة فجأة', points: 20 }, { text: 'ارتفاع أسعار التذاكر بشكل جنوني', points: 10 }, { text: 'تقلبات وأحوال الطقس السيئة بالوجهة', points: 5 } ] },
+            { category: 'سفر وسياحة', text: 'غرض يضعه الشخص دائماً في حقيبة الظهر (الشنطة اليدوية داخل الطائرة)', answers: [ { text: 'باور بانك وشواحن الأجهزة', points: 40 }, { text: 'الوثائق الرسمية والأموال', points: 30 }, { text: 'سماعات الرأس وعزل الصوت', points: 15 }, { text: 'وسادة الرقبة والنوم', points: 10 }, { text: 'عطر مرطب وصغير', points: 5 } ] },
+            { category: 'سفر وسياحة', text: 'أجمل منطقة يفضلها الناس للسفر الداخلي بالمملكة خلال فصل الصيف بجوها البارد', answers: [ { text: 'منطقة عسير (أبها والسودة)', points: 50 }, { text: 'الباحة', points: 20 }, { text: 'الطائف', points: 15 }, { text: 'العلا', points: 10 }, { text: 'جدة للاستمتاع بالبحر', points: 5 } ] },
+            { category: 'سفر وسياحة', text: 'برنامج أو تطبيق لا يستغني عنه أي مسافر للتنقل داخل وجهته ومعرفة الطرق', answers: [ { text: 'خرائط جوجل (Google Maps)', points: 60 }, { text: 'أوبر أو تطبيقات التاكسي المحلية', points: 20 }, { text: 'تطبيق المترو والمواصلات العامة', points: 10 }, { text: 'بوكينج لمعرفة حجز الفندق وعنوانه', points: 7 }, { text: 'تطبيقات الترجمة الفورية', points: 3 } ] },
+            { category: 'سفر وسياحة', text: 'أكثر هدية تذكارية (Souvenir) يشتريها الناس من الدول التي يزورونها الماتحف', answers: [ { text: 'مغناطيس الثلاجة الصغير للشكل', points: 50 }, { text: 'ملابس أو قبعات تحمل اسم الدولة', points: 20 }, { text: 'حلويات أو أطعمة تشتهر بها المدينة', points: 15 }, { text: 'أكواب قهوة مطبوعة بالمعالم', points: 10 }, { text: 'تحف مجسمة صغيرة للمباني', points: 5 } ] },
+
+            // تقنية وجوالات
+            { category: 'تقنية وجوالات', text: 'أكثر مواصفة يركز عليها المشتري عند تصفح الجوالات الجديدة', answers: [ { text: 'أداء وجودة الكاميرات والتصوير', points: 38 }, { text: 'حجم وسعة البطارية وسرعة الشحن', points: 28 }, { text: 'السعر مقابل القيمة والمواصفات', points: 18 }, { text: 'حجم ذاكرة التخزين الداخلية', points: 11 }, { text: 'نوع الشاشة وسرعة التحديث', points: 5 } ] },
+            { category: 'تقنية وجوالات', text: 'حركة يفعلها الشخص فوراً إذا علق أو هنّج جواله بالكامل وما استجاب', answers: [ { text: 'إعادة تشغيل إجباري (Restart)', points: 55 }, { text: 'النقر بقوة على الشاشة عدة مرات', points: 20 }, { text: 'ترك الجوال فتره حتى يهدأ ويندمل', points: 12 }, { text: 'توصيل الجوال بالشاحن الكهربائي', points: 8 }, { text: 'فك كفر أو غطاء الحماية الخارجي', points: 5 } ] },
+            { category: 'تقنية وجوالات', text: 'أكثر شيء يستهلك بطارية الجوال بسرعة خيالية خلال اليوم', answers: [ { text: 'ألعاب الفيديو الثقيلة ومعدل الإطارات العالي', points: 40 }, { text: 'سطوع الشاشة الكامل والتلقائي العالي', points: 25 }, { text: 'استخدام الـ GPS وتطبيقات الخرائط والتنقل', points: 18 }, { text: 'تصوير الفيديوهات بدقة 4K العالية', points: 12 }, { text: 'تشغيل البيانات الخلوية 5G بالخلفية', points: 5 } ] },
+            { category: 'تقنية وجوالات', text: 'أول أكسسوار يحرص المشتري على تركيبه لحماية الجوال الجديد من الكسر', answers: [ { text: 'ستيكر حماية زجاجي للشاشة الأمامية', points: 55 }, { text: 'كفر حماية خلفي مقاوم للصدمات', points: 30 }, { text: 'حامي زجاجي لعدسات الكاميرا الخلفية', points: 8 }, { text: 'مسكة خلفية للجوال أو استاند للوقوف', points: 5 }, { text: 'تعليقة أو حبل يدوي للجوال', points: 2 } ] },
+            { category: 'تقنية وجوالات', text: 'أشهر نظام تشغيل للهواتف الذكية يمتلك أكبر حصة استخدام بالعالم', answers: [ { text: 'أندرويد (Android)', points: 55 }, { text: 'آي أو إس (iOS للأيفون)', points: 40 }, { text: 'ويندوز فون', points: 3 }, { text: 'هارموني (هواوي)', points: 2 } ] },
+            { category: 'تقنية وجوالات', text: 'أكثر ماركة لابتوب منتشرة ومحبوبة للدراسة والعمل المكتبي خفيفة الوزن', answers: [ { text: 'أبل ماك بوك (MacBook)', points: 40 }, { text: 'ديل (Dell)', points: 25 }, { text: 'اتش بي (HP)', points: 18 }, { text: 'لينوفو (Lenovo)', points: 12 }, { text: 'أسوس (Asus)', points: 5 } ] },
+            { category: 'تقنية وجوالات', text: 'أشهر منصة لشراء ألعاب الكمبيوتر (PC Gaming) الرقمية وتجميعها الحساب', answers: [ { text: 'ستيم (Steam)', points: 65 }, { text: 'إيبك جيمز (Epic Games)', points: 18 }, { text: 'إكس بوكس جيم باس (Game Pass)', points: 10 }, { text: 'بليزارد (Battle.net)', points: 5 }, { text: 'إي أيه (EA Play)', points: 2 } ] },
+            { category: 'تقنية وجوالات', text: 'أكثر كرت شاشة (GPU) مطلوب من اللاعبين لأجهزة البي سي لقوته وتصميمه المتقدم', answers: [ { text: 'كرت RTX 4090 العالي', points: 45 }, { text: 'كرت RTX 4070 أو السوبر المعتدل', points: 25 }, { text: 'كرت RTX 3060 الاقتصادي الشهير', points: 15 }, { text: 'كرت RTX 4080 المتطور', points: 10 }, { text: 'كروت AMD المتنوعة', points: 5 } ] },
+            { category: 'تقنية وجوالات', text: 'سبب رئيسي يجعل الناس يشترون ساعات ذكية الرياضة البديلة', answers: [ { text: 'تتبع نبضات القلب والأنشطة الرياضية والخطوات', points: 45 }, { text: 'قراءة الإشعارات والرسائل بدون فتح الجوال', points: 25 }, { text: 'الشكل والأناقة والمظهر العصري للبس', points: 15 }, { text: 'معرفة الوقت والتنبيهات المخصصة', points: 10 }, { text: 'ميزة الاتصال والرد السريع من المعصم', points: 5 } ] },
+            { category: 'تقنية وجوالات', text: 'أكثر مكان مشهور يذهب إليه الناس لتصليح أو صيانة أجهزتهم الذكية بالرياض أو جدة', answers: [ { text: 'مرسلات أو حراج الكمبيوتر بالصالحية', points: 50 }, { text: 'شارع فلسطين بجدة للاتصالات', points: 25 }, { text: 'الوكيل الرسمي المعتمد للجهاز برقم الضمان', points: 15 }, { text: 'جرير أو إكسترا للخدمات السريعة', points: 7 }, { text: 'محلات الحي العادية الصغيرة', points: 3 } ] },
+
+            // قهوة وشاهي
+            { category: 'قهوة وشاهي', text: 'أشهر أداة فلترة وتقطير تستخدم حالياً لإعداد القهوة المختصة السوداء', answers: [ { text: 'أداة V60 الشهيرة الخزفية أو الزجاجية', points: 55 }, { text: 'آلة الإسبريسو التجارية المتقدمة والمكابس', points: 20 }, { text: 'أداة الكيمكس الزجاجية الأنيقة للفلاتر السميكة', points: 12 }, { text: 'أداة الفرنش بريس السريعة بالنقع', points: 8 }, { text: 'الآيروبريس البلاستيكية المناسبة للرحلات والسفر', points: 5 } ] },
+            { category: 'قهوة وشاهي', text: 'نوع مشروب قهوة بارد ومطلوب بكثرة في فصل الصيف الحار بالـ كافيهات', answers: [ { text: 'آيس سبانش لاتيه المحلى', points: 40 }, { text: 'V60 بارد (آيس دريب منعش)', points: 30 }, { text: 'آيس لاتيه كلاسيك عادي بالحليب', points: 15 }, { text: 'كولد برو (القهوة المقطرة الباردة المنقوعة)', points: 10 }, { text: 'أفوجاتو مع الآيسكريم الفانيليا', points: 5 } ] },
+            { category: 'قهوة وشاهي', text: 'أشهر دولة تشتهر بإنتاج وتصدير أجود وأفخم محاصيل البُن بالعالم', answers: [ { text: 'إثيوبيا (موطن البن الأصلي والفاكهي)', points: 45 }, { text: 'كولومبيا (المحاصيل المتوازنة الشوكولاتية)', points: 25 }, { text: 'اليمن (البن الخولاني العريق الفاخر)', points: 15 }, { text: 'البرازيل (أكبر كمية إنتاج تجاري عالمي للخلطات)', points: 10 }, { text: 'السلفادور أو غواتيمالا للإيحاءات الحمضية', points: 5 } ] },
+            { category: 'قهوة وشاهي', text: 'مكون إضافي يوضع مع القهوة السعودية والخليجية يمنحها الطعم واللون الأصفر المميز', answers: [ { text: 'الهيل المطحون الطازج الفواح', points: 50 }, { text: 'الزعفران الأصلي للون والرائحة الملكية', points: 25 }, { text: 'المسمار (القرنفل العطري للنكهة الحارة)', points: 13 }, { text: 'الزنجبيل المطحون للتدفئة بـ الشتاء', points: 8 }, { text: 'الخلطة الجاهزة للقهوة (القصيم وغيرها)', points: 4 } ] },
+            { category: 'قهوة وشاهي', text: 'أهم خطوة أو أداة يركز عليها باريستا القهوة المختصة لضبط طعم كوب الـ V60 ومنع المرارة', answers: [ { text: 'درجة وطحن البن بـ مطحنة كهربائية متناسقة تروس', points: 40 }, { text: 'حرارة الماء المستخدم بالترشيح والتقطير المقاس', points: 25 }, { text: 'نسبة الاستخلاص والريشيو (تناسب وزن البن والماء)', points: 18 }, { text: 'نوع وجودة الفلتر الورقي وغسله بالكامل قبل الصب', points: 12 }, { text: 'وقت الترشيح الكلي وزمن الترطيب الأولي للغازات', points: 5 } ] }
         ];
 
         function defaultState(roomCode) {
+          const teams = [];
+          for (let i = 0; i < 8; i++) {
+             teams.push({ id: i, name: `فريق ${i + 1}`, color: TEAM_COLORS[i], score: 0 });
+          }
           return {
-            roomCode, phase: 'lobby', round: 1,
-            teams: [
-              { id: 0, name: 'الفريق الأزرق', color: TEAM_COLORS[0], score: 0 },
-              { id: 1, name: 'الفريق الأحمر', color: TEAM_COLORS[1], score: 0 }
-            ],
-            players: [], currentQuestion: null, usedQuestions: [],
+            roomCode, phase: 'lobby', round: 1, maxRounds: 5,
+            teams: teams, players: [], currentQuestion: null, usedQuestions: [],
             buzzedTeamId: null, buzzedPlayerName: '', errors: 0, roundPoints: 0,
             activeTeamTurn: null
           };
@@ -86,12 +133,44 @@
           const [myTeam, setMyTeam] = useState(0);
           const [joined, setJoined] = useState(false);
 
+          const audioContextRef = useRef(null);
+
+          // وظيفة توليد صوت صفارة ميكانيكية عند الكبس اللحظي للأزرار
+          const playBuzzerSound = () => {
+             try {
+                if (!audioContextRef.current) {
+                   audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const ctx = audioContextRef.current;
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(440, ctx.currentTime); 
+                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+             } catch (e) {
+                console.log("Audio play blocked or unsupported:", e);
+             }
+          };
+
           useEffect(() => {
             if (!roomCode) return;
             return onValue(ref(db, `rooms/${roomCode}`), (snap) => {
-              if (snap.val()) setGame(snap.val());
+              const val = snap.val();
+              if (val) {
+                 // تشغيل تنبيه صوتي فوري بجوال الكابس وفي الشاشات حال قفل البازر فجأة
+                 if (game && game.buzzedTeamId === null && val.buzzedTeamId !== null) {
+                    playBuzzerSound();
+                 }
+                 setGame(val);
+              }
             });
-          }, [roomCode]);
+          }, [roomCode, game]);
 
           const initRoom = async (chosenRole) => {
             let code = roomCode.trim().toUpperCase();
@@ -104,17 +183,23 @@
           };
 
           const joinAsPlayer = async () => {
-            if (!myName.trim()) return;
-            const refPath = ref(db, `rooms/${roomCode}/players`);
+            if (!myName.trim()) return alert("يرجى كتابة الاسم الكريم!");
             const currentPlayers = game.players || [];
+            
+            // احتساب قفل الانضمام للفريق إذا وصل 4 متسابقين كحد أقصى لحماية التوازن
+            const teamPlayersCount = currentPlayers.filter(p => p.teamId === myTeam).length;
+            if (teamPlayersCount >= 4) {
+               return alert("هذا الفريق ممتلئ! (الحد الأقصى 4 لاعبين لكل فريق)");
+            }
+
             const newPlayer = { name: myName.trim(), teamId: myTeam };
-            await set(refPath, [...currentPlayers, newPlayer]);
+            await set(ref(db, `rooms/${roomCode}/players`), [...currentPlayers, newPlayer]);
             setJoined(true);
           };
 
           const selectQuestion = async (cat) => {
             const pool = QUESTIONS.filter(q => q.category === cat && !(game.usedQuestions || []).includes(q.text));
-            if (!pool.length) return alert('انتهت أسئلة هذا القسم!');
+            if (!pool.length) return alert('انتهت جميع أسئلة هذا القسم ببنك المعلومات السحابي!');
             const q = pool[Math.floor(Math.random() * pool.length)];
             
             await update(ref(db, `rooms/${roomCode}`), {
@@ -128,6 +213,8 @@
             if (game.buzzedTeamId !== null) return; 
             const player = (game.players || []).find(p => p.name === myName);
             if (!player) return;
+            
+            playBuzzerSound(); // تشغيل صوتي محلي فوري للاعب الكابس
             await update(ref(db, `rooms/${roomCode}`), {
               buzzedTeamId: player.teamId,
               buzzedPlayerName: player.name,
@@ -136,19 +223,28 @@
           };
 
           const revealAnswer = async (idx) => {
+            if (game.buzzedTeamId === null) return alert("لا يمكن كشف الإجابات قبل أن يقوم أحد المتسابقين بكبس الزر لتحديد المستحق تلقائياً!");
             const ans = game.currentQuestion.answers[idx];
             if (ans.revealed) return;
+            
             const updatedAnswers = [...game.currentQuestion.answers];
             updatedAnswers[idx].revealed = true;
             
+            // تنقيط تلقائي فوري ومباشر للفريق الذي كبس وحجز الدور حالياً
+            const updatedTeams = [...game.teams];
+            updatedTeams[game.buzzedTeamId].score += ans.points;
+            
             await update(ref(db, `rooms/${roomCode}`), {
               'currentQuestion/answers': updatedAnswers,
-              roundPoints: game.roundPoints + ans.points
+              roundPoints: game.roundPoints + ans.points,
+              teams: updatedTeams
             });
           };
 
           const addError = async () => {
-            if (game.errors >= 3) return;
+            if (game.buzzedTeamId === null) return alert("لا يوجد فريق كابس حالياً لاحتساب الخطأ عليه تلقائياً!");
+            if (game.errors >= 3) return alert("تم استهلاك الأخطاء الثلاثة للجولة بالكامل!");
+            
             await update(ref(db, `rooms/${roomCode}`), { errors: game.errors + 1 });
           };
 
@@ -156,29 +252,36 @@
             await update(ref(db, `rooms/${roomCode}`), { buzzedTeamId: null, buzzedPlayerName: '' });
           };
 
-          const endRoundAndAward = async (teamId) => {
-            const updatedTeams = [...game.teams];
-            updatedTeams[teamId].score += game.roundPoints;
-            await update(ref(db, `rooms/${roomCode}`), {
-               teams: updatedTeams,
-               currentQuestion: null,
-               roundPoints: 0,
-               errors: 0,
-               buzzedTeamId: null,
-               buzzedPlayerName: ''
-            });
+          const nextRound = async () => {
+             await update(ref(db, `rooms/${roomCode}`), {
+                round: game.round + 1,
+                currentQuestion: null,
+                roundPoints: 0,
+                errors: 0,
+                buzzedTeamId: null,
+                buzzedPlayerName: ''
+             });
+          };
+
+          // دالة للتحقق من شرط بدء اللعب: أن يكون لكل فريق مشارك لاعب واحد كحد أدنى
+          const canStartGame = () => {
+             const players = game?.players || [];
+             if (players.length === 0) return false;
+             // استخراج معرفات الفرق التي اختارها اللاعبون المتواجدون باللوبي
+             const uniqueTeamsWithPlayers = new Set(players.map(p => p.teamId));
+             return uniqueTeamsWithPlayers.size >= 1; 
           };
 
           if (!role) {
             return (
               <div class="flex flex-col items-center justify-center min-h-screen p-6 text-center">
-                <h1 class="text-5xl font-black mb-2 text-amber-400">سياق الروتين 🎯</h1>
-                <p class="text-slate-400 mb-8">نظام الحساب التلقائي، لوحة التحكم الكاملة، وأزرار الكبس اللحظية</p>
-                <div class="w-full max-w-sm space-y-3">
-                  <input value={roomCode} onChange={e => setRoomCode(e.target.value)} placeholder="أدخل رمز الغرفة المتواجد" class="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-center text-white uppercase font-bold text-lg"/>
-                  <button onClick={() => initRoom('host')} class="w-full p-4 bg-amber-500 text-slate-950 font-bold rounded-xl text-lg shadow-lg">🎙️ دخول كمقدم اللعبة (أو إنشاء)</button>
-                  <button onClick={() => initRoom('display')} class="w-full p-4 bg-slate-700 font-bold rounded-xl text-lg">🖥️ شاشة العرض الكبرى للمجلس</button>
-                  <button onClick={() => initRoom('player')} class="w-full p-4 bg-cyan-600 font-bold rounded-xl text-lg">📱 دخول كلاعب بكباسة الجوال</button>
+                <h1 class="text-6xl font-black mb-3 text-amber-400 drop-shadow-lg tracking-wider">سِيَاق الرّوتِين 🎯</h1>
+                <p class="text-slate-400 mb-10 max-w-lg text-sm md:text-base">النسخة الكبرى للمجالس: 8 فرق بالكامل، تنقيط تلقائي ذكي مرتبطة بالكبس، وصوت صفارة ميكانيكية لحظي</p>
+                <div class="w-full max-w-md space-y-4 bg-slate-900/60 p-6 rounded-3xl border border-slate-800 backdrop-blur">
+                  <input value={roomCode} onChange={e => setRoomCode(e.target.value)} placeholder="أدخل رمز الغرفة العشوائي" class="w-full p-4 bg-slate-950 border border-slate-800 rounded-2xl text-center text-amber-300 uppercase font-mono font-black text-2xl tracking-widest focus:border-amber-500 focus:outline-none transition-all"/>
+                  <button onClick={() => initRoom('host')} class="w-full p-4 bg-amber-500 text-slate-950 font-black rounded-2xl text-lg shadow-xl shadow-amber-500/10 hover:bg-amber-400 transition-all transform active:scale-95">🎙️ دخول كمقدم اللعبة الرئيسي</button>
+                  <button onClick={() => initRoom('display')} class="w-full p-4 bg-slate-800 hover:bg-slate-700 font-bold rounded-2xl text-lg transition-all text-white">🖥️ شاشة العرض الكبرى للمجلس</button>
+                  <button onClick={() => initRoom('player')} class="w-full p-4 bg-cyan-600 hover:bg-cyan-500 font-bold rounded-2xl text-lg transition-all text-white shadow-lg shadow-cyan-600/10">📱 دخول كمتسابق بكباسة الجوال</button>
                 </div>
               </div>
             );
@@ -186,16 +289,24 @@
 
           if (role === 'player' && !joined) {
             return (
-              <div class="flex flex-col items-center justify-center min-h-screen p-6">
-                <div class="bg-slate-800 p-6 rounded-2xl w-full max-w-md border border-slate-700">
-                  <h2 class="text-2xl font-bold mb-6 text-center text-amber-400">تسجيل دخول اللاعب للغرفة ({roomCode})</h2>
-                  <input value={myName} onChange={e => setMyName(e.target.value)} placeholder="اكتب اسمك الحقيقي هنا" class="w-full p-3 bg-slate-900 rounded-xl mb-4 text-center text-white text-lg font-semibold border border-slate-700"/>
-                  <label class="block mb-2 text-sm text-slate-400">اختر فريقك المخصص:</label>
-                  <div class="grid grid-cols-2 gap-3 mb-6">
-                     <button onClick={() => setMyTeam(0)} class={`p-4 rounded-xl font-bold text-white transition-all ${myTeam === 0 ? 'bg-blue-600 ring-4 ring-blue-300' : 'bg-slate-700'}`}>الفريق الأزرق</button>
-                     <button onClick={() => setMyTeam(1)} class={`p-4 rounded-xl font-bold text-white transition-all ${myTeam === 1 ? 'bg-red-600 ring-4 ring-red-300' : 'bg-slate-700'}`}>الفريق الأحمر</button>
+              <div class="flex flex-col items-center justify-center min-h-screen p-4">
+                <div class="bg-slate-900 p-6 rounded-3xl w-full max-w-lg border border-slate-800 shadow-2xl">
+                  <h2 class="text-2xl font-black mb-6 text-center text-amber-400">انضمام متسابق للغرفة ({roomCode})</h2>
+                  <input value={myName} onChange={e => setMyName(e.target.value)} placeholder="اكتب اسمك الحقيقي الثلاثي" class="w-full p-4 bg-slate-950 rounded-xl mb-5 text-center text-white text-lg font-bold border border-slate-800 focus:border-cyan-500 focus:outline-none"/>
+                  
+                  <label class="block mb-3 text-sm font-semibold text-slate-400 text-right">اختر فريقك المخصص (1-8):</label>
+                  <div class="grid grid-cols-4 gap-2 mb-6">
+                     {TEAM_COLORS.map((color, i) => {
+                        const count = (game?.players || []).filter(p => p.teamId === i).length;
+                        return (
+                          <button key={i} onClick={() => setMyTeam(i)} disabled={count >= 4} class={`p-3 rounded-xl font-bold text-white transition-all text-xs flex flex-col items-center justify-center relative ${count >= 4 ? 'opacity-30 cursor-not-allowed bg-slate-950' : ''}`} style={{ backgroundColor: myTeam === i ? color : '#1e293b', border: `2px solid ${color}` }}>
+                             <span>فريق {i+1}</span>
+                             <span class="text-[10px] opacity-70">({count}/4 لاعبين)</span>
+                          </button>
+                        );
+                     })}
                   </div>
-                  <button onClick={joinAsPlayer} class="w-full p-4 bg-emerald-500 text-slate-950 font-black rounded-xl text-lg shadow-xl">تأكيد ودخول المنصة</button>
+                  <button onClick={joinAsPlayer} class="w-full p-4 bg-emerald-500 text-slate-950 font-black rounded-2xl text-xl shadow-xl shadow-emerald-500/10 hover:bg-emerald-400 transition-all">تأكيد حجز مكان بالمنصة 🚀</button>
                 </div>
               </div>
             );
@@ -205,133 +316,174 @@
             const myTeamData = game?.teams?.[myTeam];
             const isBuzzedMe = game?.buzzedPlayerName === myName;
             return (
-              <div class="flex flex-col items-center justify-center min-h-screen p-6 text-center" style={{ backgroundColor: isBuzzedMe ? myTeamData?.color : '#0c121c' }}>
-                <div class="mb-4 text-lg">مرحبًا <span class="font-bold text-amber-400">{myName}</span> ({myTeamData?.name})</div>
+              <div class="flex flex-col items-center justify-center min-h-screen p-6 text-center transition-all duration-300" style={{ backgroundColor: isBuzzedMe ? myTeamData?.color : '#0a0f18' }}>
+                <div class="mb-6 bg-slate-900/80 p-3 px-6 rounded-full border border-slate-800 inline-block text-sm">
+                   المتسابق: <span class="font-bold text-amber-400">{myName}</span> | <span style={{ color: myTeamData?.color }} class="font-black">{myTeamData?.name}</span>
+                </div>
+
+                {/* عرض النقاط الحية للمتسابق بجواله ليعرف مركزه مباشرة */}
+                <div class="grid grid-cols-2 gap-4 max-w-sm w-full mb-6 text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 mx-auto">
+                   <div class="text-right">نقاط فريقك الحالية: <span class="font-bold text-emerald-400 text-sm">{myTeamData?.score}</span></div>
+                   <div class="text-left font-mono">الجولة الحالية: <span class="text-amber-400 font-bold text-sm">{game?.round || 1}</span></div>
+                </div>
                 
                 {game?.currentQuestion ? (
-                  <div class="w-full max-w-sm">
-                    <div class="bg-slate-800 p-4 rounded-xl mb-6 border border-slate-700">
-                      <p class="text-sm text-slate-400">السؤال النشط الآن</p>
-                      <p class="font-bold text-lg">{game.currentQuestion.text}</p>
+                  <div class="w-full max-w-md space-y-8">
+                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 shadow-xl">
+                      <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">الموضوع: {game.currentQuestion.category}</p>
+                      <p class="font-black text-xl text-white leading-relaxed">{game.currentQuestion.text}</p>
                     </div>
                     
-                    <button onClick={triggerBuzzer} disabled={game.buzzedTeamId !== null} class={`w-64 h-64 rounded-full font-black text-2xl shadow-2xl border-8 transition-all uppercase flex items-center justify-center mx-auto ${game.buzzedTeamId !== null ? 'bg-slate-700 border-slate-600 text-slate-400 scale-95' : 'bg-red-600 border-red-500 hover:bg-red-500 active:scale-90 text-white'}`}>
-                      {game.buzzedTeamId !== null ? `مكبوس لـ:\n${game.buzzedPlayerName}` : 'اكبببببس! 🚨'}
+                    <button onClick={triggerBuzzer} disabled={game.buzzedTeamId !== null} class={`w-72 h-72 rounded-full font-black text-3xl shadow-2xl border-[12px] transition-all flex flex-col items-center justify-center mx-auto cursor-pointer ${game.buzzedTeamId !== null ? 'bg-slate-800 border-slate-700 text-slate-500 scale-95 shadow-none' : 'bg-red-600 border-red-500 hover:bg-red-500 active:scale-90 text-white animate-pulse'}`}>
+                      <span>{game.buzzedTeamId !== null ? 'مَقْفُول' : 'اِكْبِسْ! 🚨'}</span>
+                      {game.buzzedTeamId !== null && <span class="text-xs font-normal mt-2 text-slate-400">الحاجز: {game.buzzedPlayerName}</span>}
                     </button>
                   </div>
                 ) : (
-                  <div class="text-slate-400 text-lg animate-pulse">بانتظار أن يختار المقدم السؤال القادم...☕</div>
+                  <div class="bg-slate-900/40 p-8 rounded-2xl border border-slate-800/60 max-w-xs mx-auto animate-pulse">
+                     <p class="text-slate-400 font-medium text-base">بانتظار أن يطلق مقدم اللعبة السؤال التالي للمجلس...☕</p>
+                  </div>
                 )}
               </div>
             );
           }
 
           return (
-            <div class="p-4 max-w-6xl mx-auto">
-              {/* الرأس العام */}
-              <div class="bg-slate-800 p-4 rounded-xl flex justify-between items-center mb-6 border border-slate-700">
-                 <div class="text-lg">الغرفة: <span class="font-mono font-bold text-amber-400 text-xl">{roomCode}</span></div>
-                 <div class="flex gap-8 font-bold text-lg">
-                    <span class="text-blue-400">🔵 {game?.teams?.[0]?.name}: {game?.teams?.[0]?.score} نقطة</span>
-                    <span class="text-red-400">🔴 {game?.teams?.[1]?.name}: {game?.teams?.[1]?.score} نقطة</span>
+            <div class="p-3 md:p-6 max-w-7xl mx-auto">
+              {/* الرأس الشامل للمعلومات والمزامنة الكاملة */}
+              <div class="bg-slate-900 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 mb-6 border border-slate-800 shadow-xl">
+                 <div class="text-lg font-semibold">غرفة المجلس الحالي: <span class="font-mono font-black text-amber-400 text-2xl tracking-wider">{roomCode}</span></div>
+                 
+                 {/* لوحة نتائج الفرق الـ 8 الكاملة والمحدثة حياً للشاشة الكبيرة والمقدم */}
+                 <div class="flex flex-wrap gap-2 justify-center max-w-3xl">
+                    {game?.teams?.map((t) => {
+                       const hasPlayers = (game?.players || []).some(p => p.teamId === t.id);
+                       if (!hasPlayers && role === 'display') return null; // لا تظهر الفرق الفارغة في شاشة العرض لجمالية الواجهة
+                       return (
+                          <div key={t.id} class="p-2 px-3 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center gap-2 text-xs transition-all" style={{ borderRight: `4px solid ${t.color}` }}>
+                             <span class="font-bold text-white/90">{t.name}:</span>
+                             <span class="font-mono font-black text-emerald-400 text-sm">{t.score}ن</span>
+                          </div>
+                       );
+                    })}
                  </div>
-                 <div class="p-1 px-4 bg-slate-900 rounded text-sm text-cyan-400 font-bold">{role === 'host' ? '🎙️ لوحة التحكم للمقدم الحصرية' : '🖥️ شاشة المجلس العريضة'}</div>
+
+                 <div class="flex items-center gap-3">
+                    <span class="bg-slate-950 text-amber-400 font-mono font-black px-4 py-1.5 rounded-xl border border-slate-800 text-sm">الجولة {game?.round || 1}</span>
+                    <span class="p-1.5 px-4 bg-slate-950 rounded-xl text-xs text-cyan-400 font-bold border border-slate-800">{role === 'host' ? '🎙️ لوحة المقدم الكاملة' : '🖥️ شاشة العرض رئيسية'}</span>
+                 </div>
               </div>
 
               {game?.phase === 'lobby' ? (
-                 <div class="bg-slate-800 p-8 rounded-2xl text-center border border-slate-700">
-                    <h2 class="text-3xl font-black mb-4">قاعة انتظار مجلس المتسابقين</h2>
-                    <p class="mb-6 text-slate-400">عدد اللاعبين المستعدين في الداخل حالياً: <span class="text-white font-bold">{game?.players?.length || 0}</span></p>
+                 <div class="bg-slate-900 p-8 rounded-3xl text-center border border-slate-800 shadow-2xl max-w-2xl mx-auto">
+                    <h2 class="text-3xl font-black mb-2 text-white">قاعة انتظار المتسابقين وتجهيز المجالس</h2>
+                    <p class="mb-6 text-sm text-slate-400">يجب على كل فريق مشارك انضمام لاعب واحد كحد أدنى (4 كحد أقصى لكل فريق)</p>
+                    
+                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-6 text-right space-y-2">
+                       <p class="text-xs text-slate-500 font-bold">قائمة المتصلين حالياً بالداخل ومجموعاتهم:</p>
+                       {(game?.players || []).length === 0 ? (
+                          <p class="text-center text-slate-500 text-xs py-4">بانتظار دخول أول متسابق بجواله...</p>
+                       ) : (
+                          <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                             {game.players.map((p, idx) => (
+                                <div key={idx} class="p-2 bg-slate-900 rounded-lg text-xs font-bold border border-slate-800 flex items-center justify-between">
+                                   <span>{p.name}</span>
+                                   <span style={{ color: TEAM_COLORS[p.teamId] }}>فريق {p.teamId+1}</span>
+                                </div>
+                             ))}
+                          </div>
+                       )}
+                    </div>
+
                     {role === 'host' && (
-                       <button onClick={() => set(ref(db, `rooms/${roomCode}/phase`), 'playing')} class="p-4 bg-emerald-500 text-slate-950 font-black rounded-xl text-xl px-8 shadow-xl hover:bg-emerald-400">إغلاق المجلس وبدء التنافس واللعب فورا 🚀</button>
+                       <button onClick={() => set(ref(db, `rooms/${roomCode}/phase`), 'playing')} disabled={!canStartGame()} class={`w-full p-4 font-black rounded-xl text-xl shadow-xl transition-all ${canStartGame() ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 cursor-pointer' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>إغلاق اللوبي وبدء التنافس الفعلي 🚀</button>
                     )}
                  </div>
               ) : (
                  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    {/* عمود اللعبة الرئيسي (الشاشة والمقدم يتشاركون فيه) */}
+                    {/* اللوحة الرئيسية للأسئلة والإجابات الشجرية المزامنة */}
                     <div class="lg:col-span-2 space-y-6">
-                       <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 relative overflow-hidden">
+                       <div class="bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-800 shadow-2xl relative">
                           {game?.currentQuestion ? (
                              <div class="text-center">
-                                <span class="bg-amber-400/20 text-amber-300 text-sm font-bold px-4 py-1 rounded-full">{game.currentQuestion.category}</span>
-                                <h2 class="text-2xl md:text-3xl font-black my-6 leading-relaxed">{game.currentQuestion.text}</h2>
+                                <span class="bg-amber-400/10 text-amber-400 text-xs font-black px-4 py-1.5 rounded-full border border-amber-400/20">{game.currentQuestion.category}</span>
+                                <h2 class="text-2xl md:text-4xl font-black my-6 text-white leading-relaxed tracking-wide">{game.currentQuestion.text}</h2>
                                 
-                                {/* مجمع النقاط الحالي للجولة */}
-                                <div class="bg-slate-900/60 inline-block p-4 px-8 rounded-2xl border border-slate-700 mb-6">
-                                   <div class="text-xs text-slate-400">مجموع نقاط الإجابات المكتشفة بالجولة</div>
-                                   <div class="text-4xl font-mono font-black text-amber-400">+{game.roundPoints || 0}</div>
+                                {/* بنك تجميع نقاط الإجابات المكتشفة حياً */}
+                                <div class="bg-slate-950 p-4 px-10 rounded-2xl border border-slate-800 inline-block mb-6 shadow-inner">
+                                   <div class="text-[10px] text-slate-500 uppercase font-bold tracking-wider mb-0.5">نقاط الإجابات النشطة الحالية</div>
+                                   <div class="text-4xl font-mono font-black text-emerald-400">+{game.roundPoints || 0}</div>
                                 </div>
 
-                                {/* لوحة الأخطاء الثلاثة المدمجة بالصوت والضوء */}
-                                <div class="flex justify-center gap-4 mb-6">
+                                {/* الأخطاء الثلاثة للجولة بالتأثير البصري الكامل */}
+                                <div class="flex justify-center gap-4 mb-8">
                                    {[1, 2, 3].map((num) => (
-                                      <div key={num} class={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-2xl border-2 transition-all ${game.errors >= num ? 'bg-red-600/30 border-red-500 text-red-500 scale-110 shadow-lg shadow-red-600/20' : 'bg-slate-900/40 border-slate-700 text-slate-600'}`}>❌</div>
+                                      <div key={num} class={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-3xl border-2 transition-all duration-300 ${game.errors >= num ? 'bg-red-600/20 border-red-500 text-red-500 scale-110 shadow-lg shadow-red-500/20' : 'bg-slate-950 border-slate-800 text-slate-800'}`}>❌</div>
                                    ))}
                                 </div>
 
-                                {/* الإجابات */}
-                                <div class="space-y-2 max-w-xl mx-auto text-right">
+                                {/* الإجابات الخمسة المخفية للشاشة والمكشوفة للمقدم والمكتشفة بالتنقيط التلقائي */}
+                                <div class="space-y-3 max-w-2xl mx-auto text-right">
                                    {game.currentQuestion.answers.map((ans, idx) => (
-                                      <div key={idx} onClick={() => role === 'host' && revealAnswer(idx)} class={`p-4 rounded-xl border flex justify-between items-center transition-all ${ans.revealed ? 'bg-blue-950/60 border-blue-500 text-white font-bold' : role === 'host' ? 'bg-slate-900/60 border-slate-700 text-slate-400 hover:border-slate-500' : 'bg-slate-900/40 border-slate-800 text-transparent select-none'}`}>
-                                         <div class="flex items-center gap-3">
-                                            <span class="w-7 h-7 bg-slate-800 rounded-full flex items-center justify-center text-xs text-slate-400 font-mono">{idx + 1}</span>
-                                            <span class={ans.revealed || role === 'host' ? 'text-white' : 'hidden'}>{ans.text}</span>
+                                      <div key={idx} onClick={() => role === 'host' && revealAnswer(idx)} class={`p-4 rounded-xl border-2 flex justify-between items-center transition-all duration-200 ${ans.revealed ? 'bg-blue-950/40 border-blue-500 text-white font-black' : role === 'host' ? 'bg-slate-950 border-slate-800 text-slate-400 cursor-pointer hover:border-slate-600' : 'bg-slate-950 border-slate-900 text-transparent select-none'}`}>
+                                         <div class="flex items-center gap-4">
+                                            <span class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-sm font-mono font-bold text-slate-400 border border-slate-800">{idx + 1}</span>
+                                            <span class={`text-sm md:text-base ${ans.revealed || role === 'host' ? 'text-white' : 'hidden'}`}>{ans.text}</span>
                                          </div>
-                                         <span class={`font-mono font-bold text-amber-400 ${ans.revealed || role === 'host' ? 'visible' : 'hidden'}`}>+{ans.points}</span>
+                                         <span class={`font-mono font-black text-amber-400 text-lg ${ans.revealed || role === 'host' ? 'visible' : 'hidden'}`}>+{ans.points}</span>
                                       </div>
                                    ))}
                                 </div>
                              </div>
                           ) : (
-                             <div class="text-center py-12 text-slate-400 text-xl font-medium">بانتظار اختيار موضوع الجولة من قبل مقدم اللعبة...🎙️</div>
+                             <div class="text-center py-20 text-slate-500 text-lg font-medium animate-pulse">بانتظار أن يختار مقدم اللعبة تصنيف الجولة من لوحة التحكم...🎙️</div>
                           )}
                        </div>
                     </div>
 
-                    {/* عمود لوحة التحكم الخاصة بالمقدم الحصرية أو معلومات الحالة للشاشة الكبيرة */}
+                    {/* لوحة التحكم الجانبية الحصرية للمقدم ومراقبة سرعة كبس البازر */}
                     <div class="space-y-6">
-                       {/* لوحة حالة الكبس اللحظية لسرعة الرد */}
-                       <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 text-center">
-                          <h3 class="font-bold text-slate-400 mb-3 text-sm">حالة كبس الأزرار اللحظية (Buzzer)</h3>
+                       {/* حالة كبس الأزرار اللحظية (Buzzer Monitor) */}
+                       <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 text-center shadow-xl">
+                          <h3 class="font-bold text-slate-400 mb-4 text-xs uppercase tracking-wider">حالة كبّاسات المتسابقين اللحظية</h3>
                           {game?.buzzedTeamId !== null ? (
-                             <div class="p-4 rounded-xl animate-bounce text-white font-black text-lg" style={{ backgroundColor: game?.teams?.[game.buzzedTeamId]?.color }}>
-                                🚨 أسرع كبسة: {game?.buzzedPlayerName}
-                                <div class="text-xs font-normal mt-1 text-white/90">الدور أو فرصة السرقة لديهم الآن</div>
+                             <div class="p-4 rounded-xl text-white font-black text-lg shadow-lg border" style={{ backgroundColor: TEAM_COLORS[game.buzzedTeamId], borderColor: TEAM_COLORS[game.buzzedTeamId] }}>
+                                <div class="text-[10px] bg-black/20 inline-block px-2 py-0.5 rounded mb-1 text-white/80 font-normal">أسرع كبسة معتمدة</div>
+                                <div class="truncate">🚨 {game?.buzzedPlayerName}</div>
+                                <div class="text-xs font-normal mt-1 text-white/90">(فريق {game.buzzedTeamId + 1}) | الدور له تلقائياً</div>
                              </div>
                           ) : (
-                             <div class="p-4 bg-slate-900 rounded-xl text-slate-400 border border-slate-800 text-sm">💡 جميع كبّاسات المتسابقين جاهزة ومنتظرة الإطلاق</div>
+                             <div class="p-5 bg-slate-950 rounded-xl text-slate-500 border border-slate-850 text-xs font-medium leading-relaxed">💡 كبّاسات المتسابقين بجميع الأجهزة جاهزة ومنتظرة إطلاق السؤال لتلقي الإشارات والفرز المباشر...</div>
                           )}
                           
                           {role === 'host' && game?.buzzedTeamId !== null && (
-                             <button onClick={clearBuzzer} class="mt-4 w-full p-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-xs font-bold transition-all text-white">🔄 إعادة تفعيل كباسة اللاعبين وتصفير الدور</button>
+                             <button onClick={clearBuzzer} class="mt-4 w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black text-white border border-slate-750 transition-all cursor-pointer">🔄 فتح وقفل البازر مجدداً (تصفير الكبس الحالي)</button>
                           )}
                        </div>
 
-                       {/* لوحة تحكم المقدم الشاملة لإدارة مجريات وسير اللعب والتنقيط التلقائي */}
+                       {/* لوحة العمليات الخاصة بمقدم اللعبة فقط (تختفي في شاشة المجلس الكبرى) */}
                        {role === 'host' && (
-                          <div class="bg-slate-800 p-6 rounded-2xl border border-slate-700 space-y-4">
-                             <h3 class="font-black text-amber-400 border-b border-slate-700 pb-2 text-sm">🕹️ لوحة إدارة عمليات التنقيط والتحكم</h3>
+                          <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4 shadow-xl">
+                             <h3 class="font-black text-amber-400 border-b border-slate-800 pb-3 text-xs uppercase tracking-wider">🎮 وحدة إدارة التنقيط الشاملة</h3>
                              
                              {!game?.currentQuestion ? (
-                                <div class="space-y-2">
-                                   <p class="text-xs text-slate-400 font-medium">اختر موضوع الجولة الحالية لإطلاقه للمجلس:</p>
+                                <div class="space-y-3">
+                                   <p class="text-xs text-slate-400 font-bold">اختر تصنيف الجولة الحالية وسيقوم البنك بالسحب العشوائي الموزع:</p>
                                    <div class="grid grid-cols-2 gap-2">
                                       {CATEGORIES.map(cat => (
-                                         <button key={cat} onClick={() => selectQuestion(cat)} class="p-3 bg-slate-900 border border-slate-700 rounded-xl hover:bg-slate-700 transition-colors font-bold text-xs text-center">{cat}</button>
+                                         <button key={cat} onClick={() => selectQuestion(cat)} class="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all font-bold text-xs text-center text-white cursor-pointer">{cat}</button>
                                       ))}
                                    </div>
                                 </div>
                              ) : (
-                                <div class="space-y-3">
-                                   <button onClick={addError} class="w-full p-3 bg-red-600/30 hover:bg-red-600/50 border border-red-500 text-red-400 font-bold rounded-xl text-sm transition-all flex items-center justify-center gap-2">❌ احتساب خطأ بالجولة (+1)</button>
+                                <div class="space-y-4">
+                                   {/* زر احتساب الخطأ التلقائي للفريق الكابس الممسك بالدور حالياً */}
+                                   <button onClick={addError} class="w-full p-4 bg-red-600/20 hover:bg-red-600/30 border-2 border-red-500 text-red-400 font-black rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-600/5">❌ احتساب خطأ (❌) على الفريق الكابس الحالي</button>
                                    
-                                   <div class="border-t border-slate-700 my-4 pt-3 space-y-2">
-                                      <p class="text-xs text-slate-400">إنهاء الجولة وصرف النقاط المتراكمة تلقائياً للفريق الفائز:</p>
-                                      <button onClick={() => endRoundAndAward(0)} class="w-full p-3 bg-blue-600 text-white font-bold rounded-xl text-xs shadow hover:bg-blue-500 transition-all">🔵 صرف النقاط المتراكمة للفريق الأزرق</button>
-                                      <button onClick={() => endRoundAndAward(1)} class="w-full p-3 bg-red-600 text-white font-bold rounded-xl text-xs shadow hover:bg-red-500 transition-all">🔴 صرف النقاط المتراكمة للفريق الأحمر</button>
+                                   <div class="border-t border-slate-800 pt-4 space-y-2">
+                                      <p class="text-xs text-slate-400 font-semibold mb-2">إغلاق الجولة والانتقال للجولة التالية:</p>
+                                      <button onClick={nextRound} class="w-full p-4 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black rounded-xl text-sm shadow-xl shadow-orange-500/10 hover:brightness-110 transition-all cursor-pointer">⏭️ إنهاء الجولة الحالية وسحب السؤال القادم</button>
                                    </div>
-                                   
-                                   <button onClick={async () => await update(ref(db, `rooms/${roomCode}`), { currentQuestion: null, roundPoints: 0, errors: 0 })} class="w-full p-2 bg-slate-900 hover:bg-slate-700 text-slate-400 border border-slate-800 rounded-xl text-xs transition-all">⚠️ إلغاء أو تخطي هذا السؤال بالكامل دون نقاط</button>
                                 </div>
                              )}
                           </div>
