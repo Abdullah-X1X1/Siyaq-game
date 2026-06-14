@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق</title>
+    <title>سياق الروتين</title>
     
     <!-- تشغيل مكتبة Tailwind للألوان والتصاميم -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -22,272 +22,211 @@
       }
     </script>
 </head>
-<body class="bg-slate-900 text-white m-0 p-0 min-h-screen font-sans select-none">
+<body class="m-0 p-0 min-h-screen select-none" style="background: #0c121c; color: #e8edf4;">
     <div id="root"></div>
 
     <script type="text/babel" data-type="module">
         import { initializeApp } from "firebase/app";
         import { getDatabase, ref, set, onValue, get } from "firebase/database";
 
-        // تكوين Firebase المستخرج من ملفك الأساسي
+        // إعدادات الـ Firebase المحدثة لتطابق مشروعك الحقيقي الحالي
         const firebaseConfig = {
-            authDomain: "siyaq-routine.firebaseapp.com",
-            databaseURL: "https://siyaq-routine-default-rtdb.firebaseio.com",
-            projectId: "siyaq-routine",
-            storageBucket: "siyaq-routine.appspot.com",
+            authDomain: "siyaq-rouyine.firebaseapp.com",
+            databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com",
+            projectId: "siyaq-rouyine",
+            storageBucket: "siyaq-rouyine.appspot.com",
             messagingSenderId: "1234567890",
             appId: "1:123"
         };
 
         const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        // تمرير الرابط المباشر داخل الدالة لضمان استقرار الاتصال اللحظي
+        const db = getDatabase(app, "https://siyaq-rouyine-default-rtdb.firebaseio.com");
 
         const { useState, useEffect, useRef } = React;
 
-        // الألوان الافتراضية للفرق
         const TEAM_COLORS = ['#5B7C99', '#8A6FAE', '#6F9C76', '#C08552', '#A3729C', '#5FA3A3', '#B0A062', '#9C6F6F'];
+        const CATEGORIES = ['عادات يومية', 'طبخ', 'سيارات', 'سفر', 'تقنية وتسوق'];
 
-        // مصفوفة الأسئلة
+        // مصفوفة الأسئلة المتكاملة
         const QUESTIONS = [
-            { category: 'عادات يومية', text: 'أول شيء يفعله أغلب الناس بعد الاستيقاظ من النوم', answers: [ { text: 'النظر في الجوال', points: 35 }, { text: 'شرب الماء', points: 20 }, { text: 'غسل الوجه', points: 15 }, { text: 'الذهاب للحمام', points: 12 }, { text: 'ترتيب السرير', points: 5 } ] },
-            { category: 'تقنية وتسوق', text: 'أشياء يشتريها الناس عادة عبر الإنترنت بسبب العروض', answers: [ { text: 'ملابس وأحذية', points: 25 }, { text: 'ساعات ذكية', points: 15 }, { text: 'ألعاب فيديو', points: 10 }, { text: 'إكسسوارات سيارات', points: 5 }, { text: 'أكواب قهوة', points: 4 } ] },
-            { category: 'طبخ', text: 'مكونات أساسية لا تخلو منها أي طبخة سعودية', answers: [ { text: 'بصل والطماطم / الصلصة', points: 20 }, { text: 'البهارات المشكلة', points: 15 }, { text: 'الزيت أو السمن', points: 10 }, { text: 'الثوم', points: 6 }, { text: 'الملح', points: 5 } ] }
+          { category: 'عادات يومية', text: 'اذكر أول شيء يفعله أغلب الناس بعد الاستيقاظ من النوم', answers: [ { text: 'النظر في الجوال', points: 40 }, { text: 'شرب الماء', points: 25 }, { text: 'الذهاب للحمام', points: 15 }, { text: 'تمديد الجسم والتمطي', points: 12 }, { text: 'النوم 5 دقائق إضافية', points: 8 } ] },
+          { category: 'عادات يومية', text: 'اذكر أكثر شيء يأخذه الناس معهم دائماً عند الخروج من المنزل', answers: [ { text: 'جوال', points: 45 }, { text: 'المحفظة', points: 25 }, { text: 'المفاتيح', points: 18 }, { text: 'النظارة الشمسية', points: 7 }, { text: 'سماعات الأذن', points: 5 } ] },
+          { category: 'طبخ', text: 'اذكر أكثر طبق يطلبه الناس في المناسبات والولائم', answers: [ { text: 'كبسة أو أرز باللحم أو الدجاج', points: 40 }, { text: 'مشكل سلطات', points: 20 }, { text: 'حلويات', points: 15 }, { text: 'مشروبات وعصائر', points: 15 }, { text: 'مشويات', points: 10 } ] },
+          { category: 'سيارات', text: 'اذكر أكثر سبب يدفع الناس لتغيير سيارتهم', answers: [ { text: 'تعطل متكرر وأعطال', points: 35 }, { text: 'تغيير الموديل أو تحديث', points: 25 }, { text: 'زيادة عدد أفراد العائلة', points: 18 }, { text: 'البيع بسعر جيد', points: 12 }, { text: 'الملل من نفس السيارة', points: 10 } ] },
+          { category: 'سفر', text: 'اذكر أكثر شيء يحرص الناس على أخذه في حقيبة السفر', answers: [ { text: 'الشاحن والكابلات', points: 30 }, { text: 'الملابس الإضافية', points: 28 }, { text: 'الأدوية الشخصية', points: 20 }, { text: 'مستحضرات العناية', points: 12 }, { text: 'الوثائق والجواز', points: 10 } ] },
+          { category: 'تقنية وتسوق', text: 'اذكر أكثر شيء يبحث عنه الناس عند شراء جوال جديد', answers: [ { text: 'البطارية', points: 30 }, { text: 'الكاميرا', points: 28 }, { text: 'السعر', points: 22 }, { text: 'الذاكرة والتخزين', points: 12 }, { text: 'التصميم والشكل', points: 8 } ] }
         ];
 
-        // توليد رمز غرفة عشوائي
-        function generateRoomCode() {
-            const chars = 'ABCDEFGHIJKLMNPQRSTUVWXYZ';
-            let result = '';
-            for (let i = 0; i < 4; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return result;
+        function defaultState(roomCode) {
+          return {
+            roomCode,
+            phase: 'lobby',
+            round: 1,
+            maxRounds: 5,
+            teams: TEAM_COLORS.map((color, i) => ({ id: i, name: `فريق ${i + 1}`, color, score: 0, turn: 0 })),
+            players: [],
+            currentQuestion: null,
+            usedQuestions: [],
+            buzzedTeamId: null,
+            buzzedPlayerId: null,
+            buzzedAt: 0,
+            errors: 0,
+            errorFlashAt: 0,
+            stealMode: false,
+            timer: { running: false, startedAt: null, duration: 30 },
+            updatedAt: Date.now(),
+          };
         }
 
-        // الحالة الافتراضية للغرفة الجديدة
-        function defaultState(roomCode) {
-            return {
-                roomCode,
-                phase: 'lobby',
-                round: 1,
-                maxRounds: 3,
-                teams: TEAM_COLORS.map((color, i) => ({ id: i, name: `فريق ${i + 1}`, color, score: 0 })),
-                players: [],
-                currentQuestionIdx: 0,
-                errors: 0,
-                errorFlashAt: 0,
-                timer: { running: false, startedAt: null, duration: 30, updatedAt: Date.now() }
-            };
+        function pickQuestion(category, used) {
+          const pool = QUESTIONS
+            .map((q, i) => ({ ...q, idx: i }))
+            .filter(q => (!category || q.category === category) && !used.includes(q.idx));
+          if (pool.length === 0) return null;
+          return pool[Math.floor(Math.random() * pool.length)];
         }
 
         function App() {
-            const [roomCode, setRoomCode] = useState('');
-            const [role, setRole] = useState(null); // 'host' or 'player'
-            const [game, setGame] = useState(null);
-            const [myPlayer, setMyPlayer] = useState(null);
-            const [tick, setTick] = useState(0);
-            const [errorMsg, setErrorMsg] = useState('');
-            const [busy, setBusy] = useState(false);
-            const [name, setName] = useState('');
-            const [selectedTeam, setSelectedTeam] = useState(null);
+          const [roomCode, setRoomCode] = useState('');
+          const [role, setRole] = useState(null); 
+          const [game, setGame] = useState(null);
+          const [myPlayer, setMyPlayer] = useState(null);
+          const [tick, setTick] = useState(0);
+          const [name, setName] = useState('');
+          const [selectedTeam, setSelectedTeam] = useState(null);
 
-            const gameRef = useRef(null);
-            gameRef.current = game;
+          useEffect(() => {
+            const iv = setInterval(() => setTick(t => t + 1), 500);
+            return () => clearInterval(iv);
+          }, []);
 
-            // تحديث التوقيت اللحظي كل ثانية
-            useEffect(() => {
-                const interval = setInterval(() => setTick(t => t + 1), 1000);
-                return () => clearInterval(interval);
-            }, []);
-
-            // الاتصال بـ Firebase عند الدخول للغرفة
-            useEffect(() => {
-                if (!roomCode) return;
-                const constRoomRef = ref(db, `rooms/${roomCode}`);
-                const unsubscribe = onValue(constRoomRef, (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) {
-                        setGame(data);
-                        if (role === 'player') {
-                            const foundPlayer = data.players?.find(p => p.id === myPlayer?.id);
-                            if (foundPlayer) setMyPlayer(foundPlayer);
-                        }
-                    }
-                });
-                return () => unsubscribe();
-            }, [roomCode, role]);
-
-            // إنشاء غرفة جديدة كـ مسؤول اللعبة
-            async function handleCreateRoom() {
-                setBusy(true);
-                const newCode = generateRoomCode();
-                const initialState = defaultState(newCode);
-                await set(ref(db, `rooms/${newCode}`), initialState);
-                setRoomCode(newCode);
-                setRole('host');
-                setBusy(false);
-            }
-
-            // محاولة دخول غرفة موجودة كلاعب
-            async function handleJoinRoom() {
-                if (!roomCode) return;
-                const cleanCode = roomCode.trim().toUpperCase();
-                setBusy(true);
-                const snapshot = await get(ref(db, `rooms/${cleanCode}`));
-                if (snapshot.exists()) {
-                    setRoomCode(cleanCode);
-                    setRole('player');
-                    setErrorMsg('');
-                } else {
-                    setErrorMsg('عذراً، رمز الغرفة غير موجود!');
+          useEffect(() => {
+            if (!roomCode) return;
+            const roomRef = ref(db, `rooms/${roomCode}`);
+            const unsubscribe = onValue(roomRef, (snapshot) => {
+              const data = snapshot.val();
+              if (data) {
+                setGame(data);
+                if (role === 'player' && myPlayer) {
+                  const found = data.players?.find(p => p.id === myPlayer.id);
+                  if (found) setMyPlayer(found);
                 }
-                setBusy(false);
+              }
+            });
+            return () => unsubscribe();
+          }, [roomCode, role]);
+
+          async function handleCreateRoom(chosenRole) {
+            let code = roomCode.trim().toUpperCase();
+            if (chosenRole === 'host') {
+              code = Math.random().toString(36).slice(2, 6).toUpperCase();
+              await set(ref(db, `rooms/${code}`), defaultState(code));
             }
+            setRoomCode(code);
+            setRole(chosenRole);
+          }
 
-            // تسجيل اللاعب داخل الغرفة واختيار الفريق
-            async function handlePlayerRegister() {
-                if (!name.trim() || selectedTeam === null) return;
-                const freshSnapshot = await get(ref(db, `rooms/${roomCode}`));
-                const currentGame = freshSnapshot.val();
-                let playersList = currentGame.players || [];
-                
-                const playerId = Math.random().toString(36).slice(2, 9);
-                const pObj = { id: playerId, name: name.trim(), teamId: selectedTeam, joinedAt: Date.now() };
-                playersList.push(pObj);
-                
-                await set(ref(db, `rooms/${roomCode}/players`), playersList);
-                setMyPlayer(pObj);
-            }
+          async function handleJoinPlayer() {
+            if (!name.trim() || selectedTeam === null) return;
+            const freshSnap = await get(ref(db, `rooms/${roomCode}`));
+            const fresh = freshSnap.val();
+            if (!fresh) return;
+            
+            const pId = 'p_' + Math.random().toString(36).slice(2, 7);
+            const pObj = { id: pId, name: name.trim(), teamId: selectedTeam, joinedAt: Date.now() };
+            if (!fresh.players) fresh.players = [];
+            fresh.players.push(pObj);
+            
+            await set(ref(db, `rooms/${roomCode}`), fresh);
+            setMyPlayer(pObj);
+          }
 
-            // شاشة الدخول الرئيسية (المعدلة بناءً على طلبك)
-            if (!role) {
-                return (
-                    <div class="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-                        <header class="mb-8">
-                            <h1 class="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 mb-2">
-                                لعبة سياق
-                            </h1>
-                            <p class="text-slate-400 text-lg">اللوحة التفاعلية المدمجة للعبة الكلمات</p>
-                        </header>
-
-                        <div class="bg-slate-800/50 border border-slate-700/50 p-8 rounded-2xl shadow-2xl max-w-xl w-full backdrop-blur-md">
-                            <h2 class="text-2xl font-bold text-amber-400 mb-4">مرحباً بك في سياق!</h2>
-                            <p class="text-slate-300 mb-6 leading-relaxed">
-                                تم ربط قواعد البيانات وبناء الواجهة بنجاح. اللعبة جاهزة الآن لبدء التحدي.
-                            </p>
-                            
-                            <div class="space-y-4 max-w-sm mx-auto">
-                                <input 
-                                    type="text" 
-                                    value={roomCode}
-                                    onChange={(e) => setRoomCode(e.target.value)}
-                                    placeholder="أدخل رمز الغرفة..." 
-                                    class="w-full px-4 py-3 text-center bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500 uppercase transition-colors"
-                                />
-                                {errorMsg && <p class="text-red-400 text-sm">{errorMsg}</p>}
-                                
-                                <button 
-                                    onClick={handleJoinRoom}
-                                    disabled={busy}
-                                    class="w-full py-3 font-bold rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 shadow-lg shadow-cyan-500/20 transition-all active:scale-95 disabled:opacity-50"
-                                >
-                                    دخول كلاعب
-                                </button>
-                                
-                                <div class="relative flex py-2 items-center">
-                                    <div class="flex-grow border-t border-slate-700"></div>
-                                    <span class="flex-shrink mx-4 text-slate-500 text-sm">أو أوجه لوحة التحكم</span>
-                                    <div class="flex-grow border-t border-slate-700"></div>
-                                </div>
-
-                                <button 
-                                    onClick={handleCreateRoom}
-                                    disabled={busy}
-                                    class="w-full py-3 font-bold rounded-xl bg-slate-700 hover:bg-slate-600 text-white transition-all active:scale-95 disabled:opacity-50"
-                                >
-                                    إنشاء غرفة جديدة (الشاشة الرئيسية)
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            // شاشة انتظار اللاعب واختيار فريقه
-            if (role === 'player' && !myPlayer) {
-                return (
-                    <div class="flex flex-col items-center justify-center min-h-screen p-4 text-center">
-                        <div class="bg-slate-800/50 border border-slate-700/50 p-8 rounded-2xl shadow-2xl max-w-md w-full backdrop-blur-md">
-                            <h2 class="text-2xl font-bold text-cyan-400 mb-6">انضمام للغرفة: {roomCode}</h2>
-                            <div class="space-y-4 text-right">
-                                <div>
-                                    <label class="block text-sm text-slate-400 mb-2">اسمك الكريم:</label>
-                                    <input 
-                                        type="text" 
-                                        value={name} 
-                                        onChange={(e) => setName(e.target.value)}
-                                        class="w-full px-4 py-2 bg-slate-900 border border-slate-700 rounded-xl text-white focus:outline-none focus:border-cyan-500"
-                                        placeholder="اكتب اسمك هنا..."
-                                    />
-                                </div>
-                                <div>
-                                    <label class="block text-sm text-slate-400 mb-2">اختر فريقك:</label>
-                                    <div class="grid grid-cols-2 gap-2">
-                                        {game?.teams?.map((team) => (
-                                            <button
-                                                key={team.id}
-                                                onClick={() => setSelectedTeam(team.id)}
-                                                style={{ backgroundColor: selectedTeam === team.id ? team.color : '#1e293b', border: `2px solid ${team.color}` }}
-                                                class="p-3 rounded-xl font-bold transition-all text-center"
-                                            >
-                                                {team.name}
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={handlePlayerRegister}
-                                    disabled={!name.trim() || selectedTeam === null}
-                                    class="w-full mt-4 py-3 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl disabled:opacity-50 transition-colors"
-                                >
-                                    تأكيد الدخول والجاهزية
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
-
-            // شاشات اللعب التفاعلية (المسؤول واللاعب) بعد الدخول بنجاح
+          if (!role) {
             return (
-                <div class="p-6 max-w-4xl mx-auto text-center">
-                    <div class="bg-slate-800/80 p-4 rounded-xl border border-slate-700 mb-6 flex justify-between items-center">
-                        <div>
-                            <span class="text-slate-400">رمز الغرفة: </span>
-                            <span class="text-xl font-bold text-amber-400 uppercase">{roomCode}</span>
-                        </div>
-                        <div class="text-lg bg-slate-900 px-4 py-1 rounded-lg border border-slate-700">
-                            {role === 'host' ? '👑 شاشة العرض والتحكم' : `🎮 لاعب: ${myPlayer?.name}`}
-                        </div>
-                    </div>
-
-                    <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-xl">
-                        <p class="text-cyan-400 font-bold mb-2">المرحلة الحالية: {game?.phase === 'lobby' ? 'قاعة الانتظار' : 'بدء التحدي والأسئلة'}</p>
-                        <h2 class="text-3xl font-extrabold text-white my-4">
-                            {game?.phase === 'lobby' ? 'في انتظار انطلاق الجولة الأولى...' : QUESTIONS[game?.currentQuestionIdx || 0].text}
-                        </h2>
-                        
-                        {game?.phase === 'lobby' && role === 'host' && (
-                            <button 
-                                onClick={async () => await set(ref(db, `rooms/${roomCode}/phase`), 'playing')}
-                                class="mt-6 px-8 py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl text-lg transition-transform active:scale-95"
-                            >
-                                إطلاق الجولة وبدء اللعب الآن 🚀
-                            </button>
-                        )}
-                    </div>
+              <div class="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+                <h1 class="text-5xl font-black mb-2 text-amber-400">سياق الروتين</h1>
+                <p class="text-slate-400 mb-8">متصل الآن ومزامن مباشرة عبر مشروع Firebase الخاص بك</p>
+                <div class="w-full max-w-sm space-y-3">
+                  <input value={roomCode} onChange={e => setRoomCode(e.target.value)} placeholder="أدخل رمز الغرفة (إذا كنت شاشة أو لاعب)" class="w-full p-3 bg-slate-800 border border-slate-700 rounded-xl text-center text-white uppercase"/>
+                  <button onClick={() => handleCreateRoom('host')} class="w-full p-4 bg-amber-500 text-slate-950 font-bold rounded-xl">🎙️ دخول كمقدم (إنشاء غرفة جديدة)</button>
+                  <button onClick={() => handleCreateRoom('display')} class="w-full p-4 bg-slate-700 font-bold rounded-xl">🖥️ دخول كشاشة عرض رئيسية</button>
+                  <button onClick={() => handleCreateRoom('player')} class="w-full p-4 bg-cyan-600 font-bold rounded-xl">📱 دخول كلاعب بجوالي</button>
                 </div>
+              </div>
             );
+          }
+
+          if (role === 'player' && !myPlayer) {
+            return (
+              <div class="flex flex-col items-center justify-center min-h-screen p-6">
+                <div class="bg-slate-800 p-6 rounded-2xl w-full max-w-md border border-slate-700">
+                  <h2 class="text-xl font-bold mb-4 text-center">انضمام للغرفة {roomCode}</h2>
+                  <input value={name} onChange={e => setName(e.target.value)} placeholder="اسمك الكريم" class="w-full p-3 bg-slate-900 rounded-xl mb-4 text-center text-white"/>
+                  <div class="grid grid-cols-2 gap-2 mb-4">
+                    {TEAM_COLORS.map((color, i) => (
+                      <button key={i} onClick={() => setSelectedTeam(i)} style={{ background: selectedTeam === i ? color : '#1e293b', border: `1px solid ${color}` }} class="p-3 rounded-xl font-bold text-sm">فريق {i+1}</button>
+                    ))}
+                  </div>
+                  <button onClick={handleJoinPlayer} class="w-full p-3 bg-amber-500 text-slate-950 font-bold rounded-xl">تأكيد الانضمام جاهز!</button>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div class="p-6 max-w-4xl mx-auto text-center">
+               <div class="bg-slate-800 p-4 rounded-xl flex justify-between items-center mb-6 border border-slate-700">
+                  <div>رمز الغرفة الحالي: <span class="text-xl font-bold text-amber-400">{roomCode}</span></div>
+                  <div class="p-1 bg-slate-900 px-3 rounded text-sm text-cyan-400 font-bold">{role === 'host' ? '🎙️ لوحة التحكم للمقدم' : role === 'display' ? '🖥️ شاشة العرض' : '🎮 جوال اللاعب'}</div>
+               </div>
+
+               <div class="bg-slate-800 p-8 rounded-2xl border border-slate-700 shadow-2xl">
+                  {game?.phase === 'lobby' ? (
+                     <div>
+                        <h2 class="text-2xl font-bold mb-4">قاعة الانتظار وتجهيز الفرق...</h2>
+                        {role === 'host' && (
+                           <button onClick={async () => await set(ref(db, `rooms/${roomCode}/phase`), 'playing')} class="p-3 bg-emerald-500 text-slate-950 font-bold rounded-xl text-lg px-6">إطلاق الجولة وبدء اللعب الآن 🚀</button>
+                        )}
+                        <p class="mt-4 text-slate-400">اللاعبين المتصلين حالياً: {game?.players?.length || 0}</p>
+                     </div>
+                  ) : (
+                     <div>
+                        <span class="bg-amber-400/10 text-amber-400 text-xs font-bold px-3 py-1 rounded-full">{game?.currentQuestion?.category || 'سياق'}</span>
+                        <h2 class="text-3xl font-extrabold my-4">{game?.currentQuestion?.text || 'بانتظار اختيار السؤال الأول من المقدم...'}</h2>
+                        
+                        {role === 'host' && !game?.currentQuestion && (
+                           <div class="grid grid-cols-2 gap-2 max-w-sm mx-auto mt-6">
+                              {CATEGORIES.map(cat => (
+                                 <button key={cat} onClick={async () => {
+                                    const q = pickQuestion(cat, game.usedQuestions || []);
+                                    if(q) {
+                                       await set(ref(db, `rooms/${roomCode}/currentQuestion`), { category: q.category, text: q.text, answers: q.answers.map(a => ({ ...a, revealed: false })) });
+                                    }
+                                 }} class="p-3 bg-slate-900 border border-slate-700 rounded-xl hover:bg-slate-700 transition-colors font-bold text-sm">{cat}</button>
+                              ))}
+                           </div>
+                        )}
+
+                        {game?.currentQuestion && (
+                           <div class="max-w-md mx-auto space-y-2 mt-6 text-right">
+                              {game.currentQuestion.answers.map((ans, idx) => (
+                                 <div key={idx} onClick={async () => {
+                                    if(role === 'host') {
+                                       await set(ref(db, `rooms/${roomCode}/currentQuestion/answers/${idx}/revealed`), true);
+                                    }
+                                 }} class="p-4 bg-slate-900 border border-slate-700 rounded-xl flex justify-between items-center cursor-pointer">
+                                    <span class="font-bold">{ans.revealed || role==='host' ? ans.text : `الإجابة ${idx+1}`}</span>
+                                    <span class="text-amber-400 font-mono font-bold">{ans.revealed || role==='host' ? `+${ans.points}` : '?'}</span>
+                                 </div>
+                              ))}
+                           </div>
+                        )}
+                     </div>
+                  )}
+               </div>
+            </div>
+          );
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
