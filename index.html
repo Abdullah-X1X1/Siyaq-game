@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -74,7 +74,7 @@
           return {
             roomCode, phase: 'lobby', round: 1, maxRounds: 5,
             teams: teams, players: [], currentQuestion: null, usedQuestions: [],
-            buzzedTeamId: null, buzzedPlayerName: '', errors: 0, roundPoints: 0,
+            buzzedTeamId: -1, buzzedPlayerName: '', errors: 0, roundPoints: 0,
             activeTeamTurn: null
           };
         }
@@ -123,9 +123,8 @@
             return () => unsubscribe();
           }, [roomCode]);
 
-          // تشغيل الصوت عند حدوث كبس حقيقي مستقل عن المزامنة الأساسية
           useEffect(() => {
-             if (game && game.buzzedTeamId !== null && game.buzzedTeamId !== undefined) {
+             if (game && game.buzzedTeamId !== undefined && game.buzzedTeamId !== null && game.buzzedTeamId !== -1) {
                  playBuzzerSound();
              }
           }, [game?.buzzedTeamId, game?.buzzedPlayerName]);
@@ -165,12 +164,12 @@
             await update(ref(db, `rooms/${roomCode}`), {
               currentQuestion: { text: q.text, category: q.category, answers: q.answers.map(a => ({...a, revealed: false})) },
               usedQuestions: [...(game.usedQuestions || []), q.text],
-              buzzedTeamId: null, buzzedPlayerName: '', errors: 0, roundPoints: 0, activeTeamTurn: null
+              buzzedTeamId: -1, buzzedPlayerName: '', errors: 0, roundPoints: 0, activeTeamTurn: null
             });
           };
 
           const triggerBuzzer = async () => {
-            if (game.buzzedTeamId !== null) return; 
+            if (game.buzzedTeamId !== -1) return; 
             await update(ref(db, `rooms/${roomCode}`), {
               buzzedTeamId: myTeam,
               buzzedPlayerName: myName,
@@ -179,7 +178,7 @@
           };
 
           const revealAnswer = async (idx) => {
-            if (game.buzzedTeamId === null) return alert("برجاء الكبس أولاً لتحديد الفريق المستحق!");
+            if (game.buzzedTeamId === -1) return alert("برجاء الكبس أولاً لتحديد الفريق المستحق!");
             const ans = game.currentQuestion.answers[idx];
             if (ans.revealed) return;
             
@@ -197,13 +196,13 @@
           };
 
           const addError = async () => {
-            if (game.buzzedTeamId === null) return alert("لا يوجد فريق ممسك بالدور لاحتساب الخطأ عليه!");
+            if (game.buzzedTeamId === -1) return alert("لا يوجد فريق ممسك بالدور لاحتساب الخطأ عليه!");
             if (game.errors >= 3) return alert("تم استهلاك الأخطاء الثلاثة للجولة!");
             await update(ref(db, `rooms/${roomCode}`), { errors: game.errors + 1 });
           };
 
           const clearBuzzer = async () => {
-            await update(ref(db, `rooms/${roomCode}`), { buzzedTeamId: null, buzzedPlayerName: '' });
+            await update(ref(db, `rooms/${roomCode}`), { buzzedTeamId: -1, buzzedPlayerName: '' });
           };
 
           const nextRound = async () => {
@@ -212,7 +211,7 @@
                 currentQuestion: null,
                 roundPoints: 0,
                 errors: 0,
-                buzzedTeamId: null,
+                buzzedTeamId: -1,
                 buzzedPlayerName: ''
              });
           };
@@ -228,7 +227,7 @@
                 <p class="text-slate-400 mb-10 text-sm md:text-base font-medium tracking-wide">النسخة 4.2 A</p>
                 <div class="w-full max-w-md space-y-4 bg-slate-900/60 p-6 rounded-3xl border border-slate-800 backdrop-blur">
                   <input value={roomCode} onChange={e => setRoomCode(e.target.value)} placeholder="أدخل رمز الغرفة" class="w-full p-4 bg-slate-950 border border-slate-800 rounded-2xl text-center text-amber-300 uppercase font-mono font-black text-2xl tracking-widest focus:border-amber-500 focus:outline-none transition-all"/>
-                  <button onClick={() => initRoom('host')} class="w-full p-4 bg-amber-500 text-slate-950 font-black rounded-2xl text-lg hover:bg-amber-400 transition-all transform active:scale-95">دخول كمقدم اللعبة</button>
+                  <button onClick={() => initRoom('host')} class="w-full p-4 bg-amber-500 text-slate-950 font-black rounded-2xl text-lg hover:bg-amber-400 transition-all transform active:scale-95 shadow-lg">دخول كمقدم اللعبة</button>
                   <button onClick={() => initRoom('display')} class="w-full p-4 bg-slate-800 hover:bg-slate-700 font-bold rounded-2xl text-lg transition-all text-white">شاشة العرض الكبرى</button>
                   <button onClick={() => initRoom('player')} class="w-full p-4 bg-cyan-600 hover:bg-cyan-500 font-bold rounded-2xl text-lg transition-all text-white shadow-lg">دخول كمتسابق</button>
                 </div>
@@ -264,6 +263,7 @@
           if (role === 'player' && joined) {
             const myTeamData = game?.teams?.[myTeam];
             const isBuzzedMe = game?.buzzedPlayerName === myName;
+            const isSomeoneBuzzed = game?.buzzedTeamId !== undefined && game?.buzzedTeamId !== null && game?.buzzedTeamId !== -1;
             return (
               <div class="flex flex-col items-center justify-center min-h-screen p-6 text-center transition-all duration-300" style={{ backgroundColor: isBuzzedMe ? myTeamData?.color : '#0a0f18' }}>
                 <div class="mb-6 bg-slate-900/80 p-3 px-6 rounded-full border border-slate-800 inline-block text-sm">
@@ -282,19 +282,21 @@
                       <p class="font-black text-xl text-white leading-relaxed">{game.currentQuestion.text}</p>
                     </div>
                     
-                    <button onClick={triggerBuzzer} disabled={game.buzzedTeamId !== null} class={`w-72 h-72 rounded-full font-black text-3xl shadow-2xl border-[12px] transition-all flex flex-col items-center justify-center mx-auto cursor-pointer ${game.buzzedTeamId !== null ? 'bg-slate-800 border-slate-700 text-slate-500 scale-95 shadow-none' : 'bg-red-600 border-red-500 hover:bg-red-500 active:scale-90 text-white'}`}>
-                      <span>{game.buzzedTeamId !== null ? 'مقفول' : 'اكبس'}</span>
-                      {game.buzzedTeamId !== null && <span class="text-xs font-normal mt-2 text-slate-400">الحاجز: {game.buzzedPlayerName}</span>}
+                    <button onClick={triggerBuzzer} disabled={isSomeoneBuzzed} class={`w-72 h-72 rounded-full font-black text-3xl shadow-2xl border-[12px] transition-all flex flex-col items-center justify-center mx-auto cursor-pointer ${isSomeoneBuzzed ? 'bg-slate-800 border-slate-700 text-slate-500 scale-95 shadow-none cursor-not-allowed' : 'bg-red-600 border-red-500 hover:bg-red-500 active:scale-90 text-white'}`}>
+                      <span>{isSomeoneBuzzed ? 'مقفول' : 'اكبس'}</span>
+                      {isSomeoneBuzzed && <span class="text-xs font-normal mt-2 text-slate-400">الحاجز: {game.buzzedPlayerName}</span>}
                     </button>
                   </div>
                 ) : (
                   <div class="bg-slate-900/40 p-8 rounded-2xl border border-slate-800/60 max-w-xs mx-auto text-slate-400 font-medium">
-                     بانتظار السؤال القادم من المقدم
+                     بانتظار اختيار تصنيف الجولة من المقدم
                   </div>
                 )}
               </div>
             );
           }
+
+          const activeBuzzed = game?.buzzedTeamId !== undefined && game?.buzzedTeamId !== null && game?.buzzedTeamId !== -1;
 
           return (
             <div class="p-3 md:p-6 max-w-7xl mx-auto text-right">
@@ -386,7 +388,7 @@
                     <div class="space-y-6 text-center">
                        <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
                           <h3 class="font-bold text-slate-400 mb-4 text-xs uppercase tracking-wider">حالة الكبس اللحظية</h3>
-                          {game?.buzzedTeamId !== null && game?.buzzedTeamId !== undefined ? (
+                          {activeBuzzed ? (
                              <div class="p-4 rounded-xl text-white font-black text-lg shadow-lg border" style={{ backgroundColor: TEAM_COLORS[game.buzzedTeamId], borderColor: TEAM_COLORS[game.buzzedTeamId] }}>
                                 <div class="text-[10px] bg-black/20 inline-block px-2 py-0.5 rounded mb-1 text-white/80 font-normal">أسرع كبسة معتمدة</div>
                                 <div class="truncate">اللاعب: {game?.buzzedPlayerName}</div>
@@ -396,8 +398,8 @@
                              <div class="p-5 bg-slate-950 rounded-xl text-slate-500 border border-slate-800 text-xs font-medium">كبّاسات المتسابقين جاهزة لتلقي الإشارات...</div>
                           )}
                           
-                          {role === 'host' && game?.buzzedTeamId !== null && game?.buzzedTeamId !== undefined && (
-                             <button onClick={clearBuzzer} class="mt-4 w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black text-white border border-slate-700 transition-all cursor-pointer">تصفير الكبس الحالي</button>
+                          {role === 'host' && activeBuzzed && (
+                             <button onClick={clearBuzzer} class="mt-4 w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black text-white border border-slate-700 transition-all cursor-pointer">تصفير وتفعيل الكبس للجميع</button>
                           )}
                        </div>
 
