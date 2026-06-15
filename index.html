@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق - النسخة المعتمدة الاحترافية</title>
+    <title>لعبة سياق - النسخة الفخمة المعتمدة</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -23,7 +23,7 @@
         const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
         const db = getDatabase(initializeApp(firebaseConfig));
 
-        // توليد مصفوفة الـ 200 تصنيف المتنوعة لضمان أقصى درجات التنوع والمفاجأة باللعب
+        // مصفوفة الـ 200 تصنيف المتنوعة لضمان أقصى درجات التنوع والمفاجأة باللعب
         const CATEGORIES_200 = [
             "طبخ وأكلات شعبية", "عادات رمضانية", "رحلات البر والكشتات", "سيارات رياضية", "مشروبات ساخنة", "تطبيقات الجوال", "ألعاب الكمبيوتر", "صناعة القهوة المختصة", "وجهات سياحية محلية", "عادات الصباح",
             "ماركات سيارات فخمة", "حلويات العيد", "أثاث المجالس الكلاسيك", "ستريمرز وصناع محتوى", "أفلام غموض وإثارة", "عادات الشتاء", "مشتريات السوبرماركت", "أشياء تضيع في البيت", "تجهيزات السفر", "رياضة كرة القدم",
@@ -45,7 +45,6 @@
             "أشياء في صندوق السيارة الخلفي", "وجبات الغداء الخفيفة", "أماكن التخييم الجبلية", "عادات الاحتفال بالانجازات", "أكلات هندية غنية بالبهارات", "مشروبات باردة بالقهوة", "مستلزمات الصيد البري", "تطبيقات الموسيقى والصوتيات", "أدوات الدهان والطلاء المنزلي", "أفلام وثائقية ملهمة"
         ];
 
-        // بنية توليد الإجابات الديناميكية العشوائية لـ 200 تصنيف لمنع التكرار نهائياً وتحقيق تنوع لا نهائي لـ 100 مرة واكثر
         const generateDynamicQuestion = (catName) => {
             const randomPools = [
                 { q: `وش أكثر شيء يركز عليه الشخص إذا اختار شي يخص [${catName}]؟`, a: ["الجودة والمتانة", "السعر المناسب", "المظهر والشكل الخارجي", "السمعة والعلامة التجارية", "توصية الأصدقاء"] },
@@ -55,17 +54,14 @@
             ];
             const selected = randomPools[Math.floor(Math.random() * randomPools.length)];
             
-            // خلط عشوائي للنقاط لتغيير الأوزان والترتيب في كل مرة يتم اختيار التصنيف
+            // توزيع النقاط الثابتة ليتم فرزها من الأعلى للأقل تنازلياً دائماً وبشكل قطعي لحفظ جودة اللعب
             const pointsDistribution = [50, 25, 15, 8, 2];
             const structuredAnswers = selected.a.map((txt, index) => ({
                 text: txt,
                 points: pointsDistribution[index]
-            })).sort(() => Math.random() - 0.5);
+            })).sort((a, b) => b.points - a.points); // ترتيب من الأعلى للأقل
 
-            return {
-                text: selected.q,
-                answers: structuredAnswers
-            };
+            return { text: selected.q, answers: structuredAnswers };
         };
 
         const playSynthSound = (type) => {
@@ -94,7 +90,7 @@
             const [room, setRoom] = React.useState('');
             const [gameState, setGameState] = React.useState({
                 currentCategory: "", activeTeam: "", buzzerOpen: true, revealed: {}, roundActive: false, roundNumber: 1, questionText: "", currentAnswers: [],
-                buzzerQueue: [], // طابور الكبس لحفظ الترتيب اللحظي للضغط
+                buzzerQueue: [],
                 teams: {
                     team1: { name: 'فريق 1', score: 0, errors: 0 }, team2: { name: 'فريق 2', score: 0, errors: 0 },
                     team3: { name: 'فريق 3', score: 0, errors: 0 }, team4: { name: 'فريق 4', score: 0, errors: 0 },
@@ -103,6 +99,7 @@
                 }
             });
 
+            // نظام تتبع ذكي لبث الأصوات فورياً على كافة الأجهزة المتصلة
             React.useEffect(() => {
                 if (!room) return;
                 const roomRef = ref(db, `rooms/${room}`);
@@ -110,9 +107,19 @@
                     const data = snapshot.val();
                     if (data) {
                         setGameState(prev => {
-                            if (data.activeTeam && data.activeTeam !== prev.activeTeam) {
-                                playSynthSound('buzz');
-                            }
+                            // تشغيل صوت الكبس
+                            if (data.activeTeam && data.activeTeam !== prev.activeTeam) playSynthSound('buzz');
+                            
+                            // تشغيل صوت الإجابة الصحيحة
+                            const prevRev = Object.values(prev.revealed || {}).filter(Boolean).length;
+                            const newRev = Object.values(data.revealed || {}).filter(Boolean).length;
+                            if (newRev > prevRev) playSynthSound('correct');
+
+                            // تشغيل صوت الخطأ لجميع اللاعبين والمقدم لرفع متعة التحدي
+                            const prevErr = Object.values(prev.teams || {}).reduce((acc, t) => acc + (t.errors || 0), 0);
+                            const newErr = Object.values(data.teams || {}).reduce((acc, t) => acc + (t.errors || 0), 0);
+                            if (newErr > prevErr) playSynthSound('wrong');
+
                             return { ...prev, ...data };
                         });
                     } else if (role === 'host') {
@@ -134,20 +141,15 @@
 
             const updateDB = (updates) => update(ref(db, `rooms/${room}`), updates);
 
-            // كبس ذكي مع حفظ الترتيب في طابور الكبس ومنع من لديه 3 أخطاء من اللعب
             const pressBuzzer = (teamKey) => {
                 if (gameState.buzzerOpen && gameState.teams[teamKey].errors < 3) {
                     const roomRef = ref(db, `rooms/${room}`);
                     runTransaction(roomRef, (currentData) => {
                         if (!currentData) return currentData;
                         if (!currentData.buzzerQueue) currentData.buzzerQueue = [];
-                        
-                        // إضافة الفريق للطابور إذا لم يكن موجوداً مسبقاً
                         if (!currentData.buzzerQueue.includes(teamKey)) {
                             currentData.buzzerQueue.push(teamKey);
                         }
-                        
-                        // تعيين الفريق الأول كفريق نشط حالياً للإجابة
                         if (!currentData.activeTeam) {
                             currentData.activeTeam = currentData.buzzerQueue[0];
                         }
@@ -156,11 +158,9 @@
                 }
             };
 
-            // اختيار تصنيف عشوائي بالكامل من بين الـ 200 تصنيف وتوليد الأسئلة فوراً
             const triggerRandomCategory = () => {
                 const randomCat = CATEGORIES_200[Math.floor(Math.random() * CATEGORIES_200.length)];
                 const generated = generateDynamicQuestion(randomCat);
-                
                 updateDB({
                     currentCategory: randomCat,
                     questionText: generated.text,
@@ -175,75 +175,55 @@
                 });
             };
 
-            // احتساب الخطأ مع إخراج الصوت عند المقدم فقط
             const triggerWrongAnswer = () => {
                 if (gameState.activeTeam) {
-                    if (role === 'host') playSynthSound('wrong'); // الصوت عند المقدم فقط!
                     const currentErrors = gameState.teams[gameState.activeTeam].errors;
                     const nextErrors = Math.min(currentErrors + 1, 3);
-                    
-                    const updates = {
-                        [`teams/${gameState.activeTeam}/errors`]: nextErrors
-                    };
+                    const updates = { [`teams/${gameState.activeTeam}/errors`]: nextErrors };
 
-                    // إذا وصل لـ 3 أخطاء يفقد الأهلية فوراً ونقوم بتمرير الدور تلقائياً إن وجد فريق آخر بالطابور
                     if (nextErrors >= 3) {
                         const nextQueue = gameState.buzzerQueue.filter(t => t !== gameState.activeTeam);
                         updates.buzzerQueue = nextQueue;
                         updates.activeTeam = nextQueue.length > 0 ? nextQueue[0] : "";
                     }
-
                     updateDB(updates);
                 }
             };
 
-            // زر تحويل الدور للفريق التالي في طابور الكبس (حسب من ضغط أولاً وثانياً)
             const passTurnToNextInQueue = () => {
                 if (gameState.buzzerQueue && gameState.buzzerQueue.length > 1) {
                     const currentActive = gameState.activeTeam;
-                    // تدوير الطابور أو إزالة الفريق الحالي والانتقال للتالي
                     const nextQueue = gameState.buzzerQueue.filter(t => t !== currentActive);
-                    updateDB({
-                        buzzerQueue: nextQueue,
-                        activeTeam: nextQueue.length > 0 ? nextQueue[0] : ""
-                    });
+                    updateDB({ buzzerQueue: nextQueue, activeTeam: nextQueue.length > 0 ? nextQueue[0] : "" });
                 } else {
-                    // إذا لم يكن هناك فريق تالي، يتم تصفير الكبس لفتح المجال
-                    updateDB({
-                        activeTeam: "",
-                        buzzerQueue: []
-                    });
+                    updateDB({ activeTeam: "", buzzerQueue: [] });
                 }
             };
 
             const endRound = () => {
-                updateDB({
-                    currentCategory: "",
-                    roundActive: false,
-                    activeTeam: "",
-                    buzzerQueue: [],
-                    roundNumber: gameState.roundNumber + 1
-                });
+                updateDB({ currentCategory: "", roundActive: false, activeTeam: "", buzzerQueue: [], roundNumber: gameState.roundNumber + 1 });
             };
 
             const clickRevealAnswer = (idx, points) => {
-                if (role === 'host') playSynthSound('correct');
                 const updates = { [`revealed/${idx}`]: true };
                 if (gameState.activeTeam) {
                     const currentScore = gameState.teams[gameState.activeTeam].score;
                     updates[`teams/${gameState.activeTeam}/score`] = currentScore + points;
-                    // ملاحظة: اللاعب يستمر في الإجابة ولا يفقد الدور عند الإجابة الصحيحة
                 }
                 updateDB(updates);
             };
 
-            // شاشة الدخول الرئيسية الموحدة
+            const handleTeamNameChange = (teamKey, newName) => {
+                updateDB({ [`teams/${teamKey}/name`]: newName });
+            };
+
+            // شاشة الدخول الرئيسية
             if (!role) return (
                 <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-4 max-w-md mx-auto">
-                    <h1 class="text-6xl font-black text-blue-500 mb-2 tracking-wider">سياق</h1>
-                    <input class="p-4 rounded-2xl bg-[#111936] border-2 border-[#1E295D] text-center text-xl w-full text-white focus:border-blue-500 outline-none" 
+                    <h1 className="text-6xl font-black text-blue-500 mb-2 tracking-wider">سياق</h1>
+                    <input className="p-4 rounded-2xl bg-[#111936] border-2 border-[#1E295D] text-center text-xl w-full text-white focus:border-blue-500 outline-none" 
                            placeholder="أدخل رمز الغرفة الموحد" value={room} onChange={e => setRoom(e.target.value.toUpperCase())} />
-                    <div class="grid grid-cols-1 gap-3 w-full">
+                    <div className="grid grid-cols-1 gap-3 w-full">
                         <button disabled={!room} className="bg-blue-600 disabled:opacity-30 p-4 rounded-2xl font-bold text-white text-lg" onClick={() => setRole('host')}>لوحة التحكم (المقدم)</button>
                         <button disabled={!room} className="bg-[#111936] border border-[#1E295D] disabled:opacity-30 p-4 rounded-2xl font-bold text-lg" onClick={() => setRole('display')}>شاشة العرض (الجمهور)</button>
                         <div className="grid grid-cols-2 gap-2">
@@ -255,52 +235,83 @@
                 </div>
             );
 
-            // شاشة اللاعبين (تطابق الهوية المرئية لـ image_5.png ونظيفة تماماً من أرقام التصنيفات)
+            // واجهة اللاعب مع ظهور جدول مخفي لتتبع حماس الجولة + إمكانية تعديل اسم الفريق
             if (role.startsWith('team')) {
                 const myTurn = gameState.activeTeam === role;
                 const hasThreeErrors = gameState.teams[role].errors >= 3;
                 const allowed = gameState.buzzerOpen && !gameState.activeTeam && !hasThreeErrors;
                 
                 return (
-                    <div className="flex flex-col items-center justify-between min-h-screen p-6">
-                        <div className="w-full text-center pt-4">
-                            <span className="text-xs text-slate-500">غرفة: {room} | {gameState.teams[role].name}</span>
-                            {gameState.roundActive && (
-                                <div className="mt-4 p-5 rounded-2xl bg-[#111936] border border-[#1E295D]">
-                                    <p className="text-xs text-blue-400 mb-2 font-bold">سألنا 100 شخص...</p>
-                                    <h2 className="text-lg font-bold text-white leading-relaxed">{gameState.questionText}</h2>
+                    <div className="flex flex-col justify-between min-h-screen p-4 max-w-2xl mx-auto w-full">
+                        {/* ترويسة وتعديل الاسم */}
+                        <div className="panel-bg rounded-2xl p-4 flex flex-col gap-3 w-full shadow-md">
+                            <div className="flex justify-between items-center text-xs text-slate-400">
+                                <span>الغرفة: {room}</span>
+                                <div className="flex gap-1">
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] border ${gameState.teams[role].errors >= i ? 'bg-red-600 border-red-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-600'}`}>X</div>
+                                    ))}
                                 </div>
-                            )}
+                            </div>
+                            <div className="flex items-center gap-2 bg-[#0B132B] p-2 rounded-xl border border-blue-950">
+                                <span className="text-xs text-blue-400 font-bold whitespace-nowrap">اسم فريقك:</span>
+                                <input className="bg-transparent text-white font-bold text-sm w-full outline-none focus:text-blue-400" 
+                                       value={gameState.teams[role].name} onChange={e => handleTeamNameChange(role, e.target.value)} />
+                            </div>
                         </div>
-                        
-                        {hasThreeErrors ? (
-                            <div className="w-60 h-60 rounded-full bg-red-950 border-4 border-red-700 flex flex-col items-center justify-center my-auto shadow-2xl">
-                                <span className="text-white font-black text-2xl">مستبعد!</span>
-                                <span className="text-red-400 text-xs mt-1">وصلت لـ 3 أخطاء</span>
+
+                        {/* السؤال وجدول الإجابات التفاعلي على شاشة اللاعب */}
+                        {gameState.roundActive ? (
+                            <div className="board-bg rounded-2xl p-4 my-3 flex flex-col gap-4 shadow-lg">
+                                <div className="text-center">
+                                    <p className="text-[11px] text-slate-400 mb-1">سألنا 100 شخص...</p>
+                                    <h3 className="text-sm md:text-base font-black text-white leading-relaxed">{gameState.questionText}</h3>
+                                </div>
+
+                                <div className="grid grid-cols-1 gap-2">
+                                    {gameState.currentAnswers && gameState.currentAnswers.map((ans, idx) => {
+                                        const isRevealed = gameState.revealed[idx];
+                                        return (
+                                            <div key={idx} className={`rounded-xl px-3 py-2.5 flex justify-between items-center text-xs font-bold border transition-all h-12
+                                                ${isRevealed ? 'bg-[#131C38] border-emerald-500/30 text-emerald-400' : 'bg-[#0B132B]/60 border-blue-950 text-slate-500'}`}>
+                                                <div>{isRevealed ? `${ans.points}+` : '?'}</div>
+                                                <div className="flex items-center gap-2 flex-row-reverse">
+                                                    <span className="w-5 h-5 rounded-full bg-blue-900/20 text-blue-400 text-[10px] flex items-center justify-center border border-blue-800/20">{idx + 1}</span>
+                                                    <span>{isRevealed ? ans.text : "•••••••••••••"}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
                             </div>
                         ) : (
-                            <button onClick={() => pressBuzzer(role)} disabled={!allowed}
-                                    className={`w-60 h-60 rounded-full font-black text-3xl shadow-2xl transition-all duration-75 my-auto touch-manipulation
-                                    ${myTurn ? 'bg-emerald-500 scale-105 text-white' : allowed ? 'bg-red-600 active:scale-95 text-white' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}>
-                                {myTurn ? 'دورك أجب!' : allowed ? 'إكبس هنا!' : 'انتظر'}
-                            </button>
+                            <div className="text-center text-slate-500 text-xs py-12">بانتظار بدء الجولة من المقدم...</div>
                         )}
 
-                        <div className="flex gap-2 mb-4">
-                            {[1, 2, 3].map(i => (
-                                <div key={i} className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm border ${gameState.teams[role].errors >= i ? 'bg-red-600 border-red-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-600'}`}>X</div>
-                            ))}
+                        {/* زر الكبس الذكي أسفل الشاشة لسهولة الوصول والمشاهدة */}
+                        <div className="flex justify-center pb-4">
+                            {hasThreeErrors ? (
+                                <div className="w-44 h-44 rounded-full bg-red-950/80 border-4 border-red-700 flex flex-col items-center justify-center shadow-xl animate-pulse">
+                                    <span className="text-white font-black text-lg">مستبعد!</span>
+                                    <span className="text-red-400 text-[10px] mt-0.5">3 أخطاء</span>
+                                </div>
+                            ) : (
+                                <button onClick={() => pressBuzzer(role)} disabled={!allowed}
+                                        className={`w-44 h-44 rounded-full font-black text-xl shadow-2xl transition-all duration-75 touch-manipulation
+                                        ${myTurn ? 'bg-emerald-500 scale-105 text-white animate-pulse' : allowed ? 'bg-red-600 active:scale-95 text-white' : 'bg-slate-800 text-slate-600 cursor-not-allowed'}`}>
+                                    {myTurn ? 'دوركم أجب!' : allowed ? 'إكبس!' : 'انتظر'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 );
             }
 
-            // لوحة العرض ولوحة التحكم المدمجة الذكية
+            // لوحة التحكم الأساسية وعرض الجمهور الكبرى الموحدة
             const renderMainDashboard = (isHostMode) => {
                 return (
                     <div className="p-4 md:p-6 min-h-screen flex flex-col justify-between max-w-[1600px] mx-auto">
-                        
-                        {/* البار العلوي المستمر لـ 8 فرق */}
+                        {/* بار الفريق والمجموعات العلوي لـ 8 فرق */}
                         <div className="panel-bg rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4 mb-4 shadow-xl">
                             <div className="flex items-center gap-3">
                                 <span className="bg-blue-600 text-white font-bold px-4 py-1.5 rounded-xl text-sm">{isHostMode ? 'لوحة التحكم للمقدم' : 'شاشة العرض العامة'}</span>
@@ -320,23 +331,22 @@
                                     );
                                 })}
                             </div>
-
                             <div className="font-bold text-amber-400 text-sm font-mono">الغرفة: <span className="text-white text-base">{room}</span></div>
                         </div>
 
-                        {/* تقسيم الشاشة */}
+                        {/* لوحة التقسيم الجانبي والرئيسي */}
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start my-auto w-full">
                             
-                            {/* التحكم الجانبي للمقدم أو عرض الحالة */}
+                            {/* التحكم الجانبي */}
                             <div className="lg:col-span-3 flex flex-col gap-4 w-full">
                                 <div className="panel-bg rounded-2xl p-4 shadow-lg">
-                                    <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">حالة الدور والترتيب اللحظي للكبس</h4>
+                                    <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">ترتيب الكبس والدور الحالي</h4>
                                     <div className="bg-[#0B132B] border border-blue-900/60 rounded-xl p-4 min-h-[90px] flex flex-col justify-center gap-2">
                                         {gameState.activeTeam ? (
                                             <div>
                                                 <p className="text-emerald-400 font-black text-sm">💡 الدور الحالي: {gameState.teams[gameState.activeTeam].name}</p>
                                                 {gameState.buzzerQueue && gameState.buzzerQueue.length > 1 && (
-                                                    <p className="text-slate-400 text-[11px] mt-1">التالي في الانتظار: {gameState.buzzerQueue.slice(1).map(k => gameState.teams[k].name).join(' ← ')}</p>
+                                                    <p className="text-slate-400 text-[11px] mt-1">التالي بالانتظار: {gameState.buzzerQueue.slice(1).map(k => gameState.teams[k].name).join(' ← ')}</p>
                                                 )}
                                             </div>
                                         ) : (
@@ -348,26 +358,19 @@
                                 {isHostMode && (
                                     <div className="panel-bg rounded-2xl p-4 shadow-lg flex flex-col gap-3">
                                         <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wide">أوامر التحكم الذكية</h4>
+                                        <button onClick={triggerRandomCategory} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl text-sm transition-all shadow-md">
+                                            🎲 اختيار تصنيف وسؤال عشوائي فوراً
+                                        </button>
                                         
-                                        {!gameState.roundActive ? (
-                                            <button onClick={triggerRandomCategory} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl text-sm transition-all shadow-md">
-                                                🎲 اختيار تصنيف وسؤال عشوائي فوراً
-                                            </button>
-                                        ) : (
-                                            <div className="flex flex-col gap-2">
+                                        {gameState.roundActive && (
+                                            <div className="flex flex-col gap-2 border-t border-slate-800 pt-3">
                                                 <button onClick={triggerWrongAnswer} disabled={!gameState.activeTeam} className={`w-full p-3 rounded-xl font-bold text-xs transition-all ${gameState.activeTeam ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
                                                     ❌ احتساب خطأ على الفريق الحالي
                                                 </button>
-                                                
                                                 <button onClick={passTurnToNextInQueue} disabled={!gameState.activeTeam} className={`w-full p-3 rounded-xl font-bold text-xs transition-all ${gameState.activeTeam ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
                                                     ➡️ تحويل الدور للفريق التالي بالترتيب
                                                 </button>
-
-                                                <button onClick={triggerRandomCategory} className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 p-2.5 rounded-xl font-bold text-xs mt-2">
-                                                    🔄 تخطي وتغيير السؤال بتصنيف آخر
-                                                </button>
-
-                                                <button onClick={endRound} className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 p-3 rounded-xl font-bold text-xs transition-all mt-1">
+                                                <button onClick={endRound} className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 p-3 rounded-xl font-bold text-xs transition-all mt-2">
                                                     🏁 إنهاء الجولة وحفظ النتائج
                                                 </button>
                                             </div>
@@ -376,21 +379,20 @@
                                 )}
                             </div>
 
-                            {/* البورد الرئيسي للعبة (تطابق تام مع أبعاد والوان شاشة العرض الاحترافية) */}
+                            {/* البورد الرئيسي الفخم المنسق تنازلياً */}
                             <div className="lg:col-span-9 w-full">
                                 {!gameState.roundActive ? (
                                     <div className="board-bg rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[450px]">
-                                        <p className="text-slate-400 text-lg font-medium animate-pulse">بانتظار قيام المقدم بتوليد جولة جديدة...</p>
+                                        <p className="text-slate-400 text-lg font-medium animate-pulse">بانتظار قيام المقدم بتوليد جولة عشوائية جديدة...</p>
                                     </div>
                                 ) : (
                                     <div className="board-bg rounded-3xl p-6 md:p-8 shadow-2xl relative">
                                         <div className="text-center mb-4">
-                                            <span className="bg-amber-500 text-slate-950 font-extrabold text-xs px-4 py-1 rounded-full uppercase tracking-wide shadow-sm">{gameState.currentCategory}</span>
+                                            <span className="bg-amber-500 text-slate-950 font-extrabold text-xs px-4 py-1 rounded-full uppercase tracking-wide ">{gameState.currentCategory}</span>
                                             <p className="text-xs md:text-sm text-slate-400 mt-4 mb-2 font-medium">سألنا 100 شخص...</p>
                                             <h2 className="text-xl md:text-3xl font-black text-white px-4 leading-snug">{gameState.questionText}</h2>
                                         </div>
 
-                                        {/* مؤشر الأخطاء الثلاثة للفريق الحالي الذي يجيب */}
                                         <div className="flex justify-center gap-3 mb-6">
                                             {[1, 2, 3].map(i => {
                                                 const hasError = gameState.activeTeam && gameState.teams[gameState.activeTeam] && gameState.teams[gameState.activeTeam].errors >= i;
@@ -403,7 +405,6 @@
                                             })}
                                         </div>
 
-                                        {/* مصفوفة الأجوبة - ذكية تظهر كاملة للمقدم ومخفية للجمهور */}
                                         <div className="grid grid-cols-1 gap-3 max-w-3xl mx-auto w-full">
                                             {gameState.currentAnswers && gameState.currentAnswers.map((ans, idx) => {
                                                 const isRevealed = gameState.revealed[idx];
@@ -412,8 +413,6 @@
                                                          className={`rounded-xl p-4 flex justify-between items-center h-16 transition-all shadow-md border text-sm md:text-base font-bold
                                                             ${isRevealed ? 'bg-[#131C38] border-emerald-500/40 text-emerald-400' : 'bg-[#0B132B]/80 border-blue-950 text-slate-400'} 
                                                             ${isHostMode ? 'cursor-pointer hover:border-blue-700' : ''}`}>
-                                                        
-                                                        {/* اليسار: النقاط */}
                                                         <div>
                                                             {isRevealed ? (
                                                                 <span className="text-amber-400 font-mono font-black">{ans.points}+</span>
@@ -423,11 +422,8 @@
                                                                 <span className="text-slate-800 font-mono">?</span>
                                                             )}
                                                         </div>
-
-                                                        {/* اليمين: النص والرقم */}
                                                         <div className="flex items-center gap-3 flex-row-reverse">
                                                             <span className="w-6 h-6 rounded-full bg-blue-900/30 text-blue-400 text-xs flex items-center justify-center border border-blue-800/40">{idx + 1}</span>
-                                                            
                                                             {isRevealed ? (
                                                                 <span className="text-white text-right">{ans.text}</span>
                                                             ) : isHostMode ? (
