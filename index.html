@@ -2,78 +2,61 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <title>سياق - التحكم الكامل</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>body { background: #0a0f18; color: white; font-family: sans-serif; }</style>
 </head>
-<body class="bg-slate-950 text-white min-h-screen">
+<body>
     <div id="root"></div>
     <script type="text/babel" data-type="module">
-        // هنا تضع الـ 200 سؤال (سأزودك بها في الرد القادم)
-        const ALL_QUESTIONS = [
-            { text: "وش أكثر شيء تطلبه إذا دخلت كافيه وما تبي قهوة سوداء؟", answers: [{text:'سبانش لاتيه', points:45}, {text:'آيس لاتيه', points:25}, {text:'فلات وايت', points:15}, {text:'كراميل ماكياتو', points:10}, {text:'موكا', points:5}] }
-        ];
+        const { useState } = React;
 
         function App() {
-            const [currentQIndex, setCurrentQIndex] = React.useState(0);
-            const [buzzerLocked, setBuzzerLocked] = React.useState(false);
-            const [errors, setErrors] = React.useState(0);
-            const [revealed, setRevealed] = React.useState({});
-            
-            const question = ALL_QUESTIONS[currentQIndex];
+            const [role, setRole] = useState(null); // 'host', 'display', 'player'
+            const [room, setRoom] = useState('');
+            const [buzzerOpen, setBuzzerOpen] = useState(true);
+            const [errors, setErrors] = useState(0);
 
-            const toggleAnswer = (idx) => {
-                setRevealed(prev => ({ ...prev, [idx]: !prev[idx] }));
-            };
+            // صفحة اختيار الدور (المدخل)
+            if (!role) return (
+                <div class="flex flex-col items-center justify-center min-h-screen p-6">
+                    <h1 class="text-6xl font-black text-amber-400 mb-8">سياق</h1>
+                    <input class="w-full max-w-sm p-4 bg-slate-900 border border-slate-700 rounded-2xl mb-4 text-center" 
+                           placeholder="أدخل رمز الغرفة" onChange={e => setRoom(e.target.value)} />
+                    <button class="w-full max-w-sm p-4 bg-amber-500 rounded-2xl font-bold mb-2" onClick={() => setRole('host')}>مقدم اللعبة</button>
+                    <button class="w-full max-w-sm p-4 bg-slate-800 rounded-2xl font-bold mb-2" onClick={() => setRole('display')}>شاشة العرض</button>
+                    <button class="w-full max-w-sm p-4 bg-cyan-600 rounded-2xl font-bold" onClick={() => setRole('player')}>متسابق</button>
+                </div>
+            );
 
-            return (
+            // واجهة المقدم (مع زر الأخطاء والكبس)
+            if (role === 'host') return (
                 <div class="p-6">
-                    <h1 class="text-amber-400 font-bold mb-6 text-center text-2xl">لوحة تحكم المقدم</h1>
-                    
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                        {/* لوحة التحكم والأسئلة */}
-                        <div class="bg-slate-900 p-6 rounded-2xl">
-                            <div class="flex justify-between items-center mb-4">
-                                <h2 class="text-sm text-slate-400">التحكم في اللعبة</h2>
-                                <button 
-                                    onClick={() => setBuzzerLocked(!buzzerLocked)}
-                                    class={`px-4 py-2 rounded-lg font-bold ${buzzerLocked ? 'bg-red-600' : 'bg-emerald-600'}`}>
-                                    {buzzerLocked ? 'الكبس مقفل' : 'الكبس مفتوح'}
-                                </button>
-                            </div>
-
-                            {/* عداد الأخطاء */}
-                            <div class="flex gap-2 mb-6">
+                    <div class="flex justify-between items-center mb-6 bg-slate-900 p-4 rounded-2xl">
+                        <span class="text-amber-400 font-bold">الغرفة: {room || 'غير محدد'}</span>
+                        <div class="flex gap-2">
+                            <button onClick={() => setBuzzerOpen(!buzzerOpen)} class={`px-6 py-2 rounded-xl font-bold ${buzzerOpen ? 'bg-emerald-600' : 'bg-red-600'}`}>
+                                {buzzerOpen ? 'الكبس مفتوح' : 'الكبس مقفل'}
+                            </button>
+                            <div class="flex gap-1">
                                 {[1,2,3].map(i => (
-                                    <button key={i} onClick={() => setErrors(i)} class={`w-12 h-12 rounded-lg ${errors >= i ? 'bg-red-500' : 'bg-slate-700'}`}>X</button>
-                                ))}
-                            </div>
-
-                            {/* الإجابات المكشوفة للمقدم */}
-                            {question.answers.map((a, i) => (
-                                <div key={i} onClick={() => toggleAnswer(i)} class={`flex justify-between p-3 mb-2 rounded cursor-pointer ${revealed[i] ? 'bg-blue-600' : 'bg-slate-800'}`}>
-                                    <span>{a.text}</span>
-                                    <span class="font-bold">{a.points}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* شاشة العرض (المخفية عن المتسابقين) */}
-                        <div class="bg-slate-900 p-6 rounded-2xl border-2 border-amber-500">
-                            <p class="text-xs text-slate-400 mb-1">سألنا 100 شخص</p>
-                            <h3 class="text-xl font-bold mb-6">{question.text}</h3>
-                            <div class="space-y-3">
-                                {question.answers.map((a, i) => (
-                                    <div key={i} class="bg-slate-950 p-4 rounded-xl text-center border border-slate-700">
-                                        {revealed[i] ? `${a.text} (${a.points})` : '؟؟؟'}
-                                    </div>
+                                    <button key={i} onClick={() => setErrors(i)} class={`w-10 h-10 rounded-lg ${errors >= i ? 'bg-red-500' : 'bg-slate-700'}`}>X</button>
                                 ))}
                             </div>
                         </div>
                     </div>
+                    {/* هنا مكان الجداول */}
+                    <div class="grid grid-cols-2 gap-8">
+                        <div class="bg-slate-900 p-6 rounded-2xl">...جدول الإجابات المكشوفة...</div>
+                        <div class="bg-slate-900 p-6 rounded-2xl border-2 border-amber-500">...شاشة العرض (مخفية)...</div>
+                    </div>
                 </div>
             );
+
+            return <div class="p-6">أهلاً بك في {role} (رمز الغرفة: {room})</div>;
         }
 
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
