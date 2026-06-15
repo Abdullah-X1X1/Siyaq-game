@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق - النسخة الذكية المحدثة</title>
+    <title>لعبة سياق - نسخة الفعاليات الدسمة</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,7 +12,6 @@
         body { background-color: #0A1128; color: #FFFFFF; font-family: system-ui, -apple-system, sans-serif; }
         .panel-bg { background-color: #111936; border: 1px solid #1E295D; }
         .board-bg { background-color: #0F1631; border: 1px solid #1E295D; }
-        /* تخصيص السكرول بار ليكون ناعم مثل جيت هب */
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #0B132B; }
         ::-webkit-scrollbar-thumb { background: #1E295D; border-radius: 4px; }
@@ -28,171 +27,219 @@
         const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
         const db = getDatabase(initializeApp(firebaseConfig));
 
-        // بنك الأسئلة الضخم والموسع - مصمم ومنطقي يدوياً 100% لجمعاتكم ومشاريعكم واهتماماتكم
+        // بنك أسئلة عامي وضخم مبني على الـ 200 فئة المقترحة بإجابات واقعية 100%
         const CURATED_ROUNDS = [
+            // --- الحياة اليومية ---
             {
-                category: "ألعاب الشوتر (FPS)",
-                question: "وش أكثر شيء يرفع ضغطك ويزعلك إذا واجهته وأنت تلعب شوتر (كود / أوفرووتش)؟",
+                category: "الحياة اليومية",
+                question: "وش أول شيء تسويه أول ما تفتح عينك وتصحى من النوم؟",
                 answers: [
-                    { text: "اللاق والبنق يرتفع فجأة", points: 45 },
-                    { text: "تطير هيدشوت من هكر وغشاش", points: 26 },
-                    { text: "تيم منوب وما يفهمون الخطة", points: 14 },
-                    { text: "واحد كامبر متربع في الزاوية", points: 11 },
-                    { text: "نيرف يخرب سلاحك المفضل", points: 4 }
+                    { text: "أقعد أدور الجوال تحت المخدرة", points: 52 },
+                    { text: "أطفي المنبه وأرجع أنام خمس دقايق", points: 26 },
+                    { text: "أتثاوب وأتمغط بالفراش", points: 13 },
+                    { text: "أروح أركض للحمام وأتوضأ", points: 9 }
                 ]
             },
             {
-                category: "تجميعات البي سي (PC Gaming)",
-                question: "لو سألنا قيمر وش أكثر قطعة هاردوير يقعد يشيل همها ويحسب ميزانيتها؟",
+                category: "الحياة اليومية",
+                question: "وش الشيء اللي مستحيل تطلع من البيت بدونه وعادي ترجع لو نسيته؟",
                 answers: [
-                    { text: "كرت الشاشة (GPU)", points: 52 },
-                    { text: "المعالج وتبريده عشان الحرارة", points: 23 },
-                    { text: "الباور سبلاي الأصلي المعتمد", points: 12 },
-                    { text: "الرامات وسرعتها العالية", points: 9 },
-                    { text: "شاشة القيمنق وسرعة الاستجابة", points: 4 }
+                    { text: "الجوال أكيد", points: 55 },
+                    { text: "مفتاح السيارة", points: 23 },
+                    { text: "المحفظة / بطاقة الصراف للـ Apple Pay", points: 15 },
+                    { text: "النظارة الشمسية عشان الشمس تعمي", points: 7 }
                 ]
             },
             {
-                category: "القهوة المختصة",
-                question: "وش الشيء اللي يخرب مزاجك تماماً وأنت تشرب كوب قهوة مختصة دفعت فيه مبلغه؟",
+                category: "الحياة اليومية",
+                question: "وش الغرض اللي دايمًا يضيع بالبيت وتقلبون البيت عشان تلقونه؟",
                 answers: [
-                    { text: "طعمها حامض بزيادة أو محروق", points: 48 },
-                    { text: "الأسعار مرتفعة ومبالغ فيها", points: 25 },
-                    { text: "تكون باردة ومو بنفس الحرارة المطلوبة", points: 13 },
-                    { text: "الحليب مبخر غلط ورغوته واجد", points: 9 },
-                    { text: "البن قديم وطعم الإيحاءات رايح", points: 5 }
+                    { text: "ريموت التلفزيون", points: 46 },
+                    { text: "مفتاح البيت أو السيارة", points: 28 },
+                    { text: "شاحن الجوال الأصلي", points: 17 },
+                    { text: "قصافة الأظافر", points: 9 }
                 ]
             },
             {
-                category: "رحلات البر والكشتات",
-                question: "أنت في البر وبعيد عن الديرة، وش أكثر غرض لو اكتشفت إنك (ضيعته / فقدته) بتخرب الكشتة؟",
+                category: "الحياة اليومية",
+                question: "وش الشيء اللي مستحيل يخلو منه أي بيت سعودي؟",
                 answers: [
-                    { text: "عزبة الطبخ والذبيحة", points: 41 },
-                    { text: "الحطب والولاعة لشبة النار", points: 28 },
-                    { text: "الماء الصالح للشرب والطبخ", points: 16 },
-                    { text: "فرشة الجلسة والجاكيتات للبرد", points: 11 },
-                    { text: "كشافات الإضاءة والبطاريات", points: 4 }
+                    { text: "كيس مليان أكياس تحت مجلى المطبخ", points: 41 },
+                    { text: "تمر سكري أو خلاص بالفريزر", points: 29 },
+                    { text: "علبة فازلين زرقاء قديمة", points: 18 },
+                    { text: "قدر ضغط (سب)", points: 12 }
                 ]
             },
             {
-                category: "ألعاب العالم المفتوح (RPG)",
-                question: "وش الموقف اللي يصير لك في ألعاب القصة (مثل ريد ديد أو سايبربانك) ويخرب عليك الاندماج؟",
+                category: "الحياة اليومية",
+                question: "وش أشهر سبب يخليك تتأخر عن موعدك أو دوامك؟",
                 answers: [
-                    { text: "قلتشات غبية تيرّب اللعبة", points: 43 },
-                    { text: "يموت الحصان أو تخرب سيارتك الفخمة", points: 27 },
-                    { text: "ملفات الحفظ تطير وتبدأ من الصفر", points: 18 },
-                    { text: "مهمة جانبية مشوارها طويل وممل", points: 9 },
-                    { text: "حرق أحداث القصة من واحد بالنت", points: 3 }
+                    { text: "زحمة الخطوط والحفريات اللي ما تخلص", points: 48 },
+                    { text: "راحت علي نومة والمنبه ما اشتغل", points: 31 },
+                    { text: "قعدت ساعة أدور موقف للسيارة", points: 14 },
+                    { text: "كنت جالس أشرب قهوة وروقت زيادة", points: 7 }
+                ]
+            },
+
+            // --- الأكل والمطاعم ---
+            {
+                category: "الأكل والمطاعم",
+                question: "وش الإضافة اللي لو ما انحطت مع الشاورما تعتبر الجريمة بحق الأكل؟",
+                answers: [
+                    { text: "ثوم زيادة ويكون ثقيل", points: 58 },
+                    { text: "بطاطس مقلية مقمرة داخل الصاروخ", points: 22 },
+                    { text: "مخلل مالح يكسر الطعم", points: 13 },
+                    { text: "شطة حارة كريستال", points: 7 }
                 ]
             },
             {
-                category: "الدوام والمحاضرات الصباحية",
-                question: "سألنا طلاب الجامعة وش أصعب شيء يواجهونه في المحاضرات اللي الساعة 8 الصباح؟",
+                category: "الأكل والمطاعم",
+                question: "لو رحت كافيه وقررت تطلب حلى مع القهوة، وش أول حلى يجي ببالك؟",
                 answers: [
-                    { text: "القومه من النوم ومقاومة الفراش", points: 56 },
-                    { text: "زحمة الخطوط ومواقف الجامعة", points: 21 },
-                    { text: "الدكتور يدقق على التحضير والتأخير", points: 12 },
-                    { text: "الفهم يستوعب صفر بدون كافيين", points: 8 },
-                    { text: "الكلاس يكون بارد ومكيفه قوي يدوخ", points: 3 }
+                    { text: "كيكة زعفران حليبة وباردة", points: 44 },
+                    { text: "كوكيز حار يذوب باليد", points: 28 },
+                    { text: "سبانش لاتيه كيك أو تشيز كيك", points: 18 },
+                    { text: "براوني مع آيس كريم", points: 10 }
                 ]
             },
             {
-                category: "سيارات الوحوش والرياضية",
-                question: "وش الشيء اللي يخلي الشباب يعشقون السيارات الرياضية والقديمة (مثل الـ GT والوحوش)؟",
+                category: "الأكل والمطاعم",
+                question: "وش المشروب البارد السرسح اللي يطلبه الشعب بالصيف والقايلة؟",
                 answers: [
-                    { text: "صوت الطرب والمكينة القوية", points: 46 },
-                    { text: "الهيبة والشكل الخارجي الفخم", points: 27 },
-                    { text: "التعديل والطقطقة عليها بالبيت", points: 13 },
-                    { text: "القومة والتسارع السريع", points: 9 },
-                    { text: "المتعة في المنعطفات والدرفت", points: 5 }
+                    { text: "موهيتو يسرسح (بلو أو فراولة)", points: 47 },
+                    { text: "آيس سبانش لاتيه حالي", points: 29 },
+                    { text: "بيبسي أو كودرد مثلج مع ليمون", points: 16 },
+                    { text: "عصير مانجو عوار قلب", points: 8 }
+                ]
+            },
+
+            // --- السعودية والخليج ---
+            {
+                category: "السعودية والخليج",
+                question: "وش الغرض اللي مستحيل تكتمل «الكشتة» أو طعة البر بدونه؟",
+                answers: [
+                    { text: "عزبة الطبخ والشاهي أهم شيء", points: 45 },
+                    { text: "الحطب والولاعة لشبة النار", points: 29 },
+                    { text: "ورق البلوت والطاولة", points: 17 },
+                    { text: "الفرشة والمساند عشان التكوة", points: 9 }
                 ]
             },
             {
-                category: "مطاعم الشاورما",
-                question: "طلبنا من 100 واحد يقولون لنا وش أهم ميزة تخلي الشاورما خرافية وصاروخية؟",
+                category: "السعودية والخليج",
+                question: "وش الشيء الأساسي اللي لازم ينزل مع دلة القهوة العربية بالمجلس؟",
                 answers: [
-                    { text: "الثوم يكون راهي ومضبوط", points: 55 },
-                    { text: "الدجاج مقمر والخبز حار", points: 22 },
-                    { text: "تكون مليانة دجاج ومو ناشفة", points: 12 },
-                    { text: "المخلل والبطاطس موزونة صح", points: 8 },
-                    { text: "الشطة الحارة تعطيها النكهة", points: 3 }
+                    { text: "تمر سكري أو خلاص فاخر", points: 56 },
+                    { text: "طحينة سايلة نغمس فيها", points: 23 },
+                    { text: "حلى منزلي أو بسبوسة", points: 13 },
+                    { text: "معمول بالتمر وهيل", points: 8 }
                 ]
             },
             {
-                category: "تطبيقات التوصيل",
-                question: "وش أكثر تصرف يقهر ويرفع الضغط يسويه مندوب التوصيل إذا قرب يوصلك؟",
+                category: "السعودية والخليج",
+                question: "وش أكثر شيء يسوونه الشباب إذا نزلت الرواتب في أول يومين؟",
                 answers: [
-                    { text: "يضيع الموقع ويقعد يتصل واجد", points: 44 },
-                    { text: "يتأخر بالطلب لدرجة يوصل بارد", points: 29 },
-                    { text: "يطلب كاش ويرفض الدفع بالشبكة", points: 13 },
-                    { text: "يكب الأكل أو المشروب بالشنطة", points: 10 },
-                    { text: "يسحب على الطلب ويلغيه فجأة", points: 4 }
+                    { text: "يعزمون العيال على عشاء فخم ومطعم غالي", points: 49 },
+                    { text: "يسددون المخالفات (ساهر) والالتزامات", points: 27 },
+                    { text: "يتقضون ملابس وعطورات جديدة", points: 16 },
+                    { text: "يوزعونها على شحنات الـ Apple Pay وتطير", points: 8 }
+                ]
+            },
+
+            // --- التقنية والألعاب ---
+            {
+                category: "التقنية والألعاب",
+                question: "وش الموقف اللي يخلي «القيمر» يضرب الطاولة أو يرمي اليد من القهر؟",
+                answers: [
+                    { text: "اللاق يرتفع فجأة ويموت قبل الفوز", points: 51 },
+                    { text: "يموت من هكر وغشاش بالقيم", points: 24 },
+                    { text: "خوياه بالتيم منوب وضيعوا الخطة", points: 16 },
+                    { text: "تطفي الكهرباء أو يفصل النت بنص القيم", points: 9 }
                 ]
             },
             {
-                category: "جمعات الاستراحة والويكند",
-                question: "سألنا الشباب وش الشيء اللي يخرب جو السهرة والجمعة في الويكند؟",
+                category: "التقنية والألعاب",
+                question: "وش التطبيق اللي يستهلك أغلب وقتك وبطاريتك خلال اليوم؟",
                 answers: [
-                    { text: "الكل ماسك جواله ومحد يسولف", points: 42 },
-                    { text: "الخويا يسحبون بآخر لحظة", points: 28 },
-                    { text: "العشاء يتأخر لين نص الليل", points: 16 },
-                    { text: "السالفة مكررة وتجيب النوم", points: 10 },
-                    { text: "النت يفصل أو البلايستيشن خربان", points: 4 }
+                    { text: "تيك توك (السكرول اللانهائي)", points: 46 },
+                    { text: "سناب شات نتابع المقاطع", points: 28 },
+                    { text: "واتساب للقروبات والسوالف", points: 17 },
+                    { text: "منصة إكس (تويتر) حق الهوشات والأخبار", points: 9 }
                 ]
             },
             {
-                category: "المقاضي والسوبرماركت",
-                question: "وش أكثر موقف متكرر ومزعج يصير لك إذا رحت تشتري أغراض للبيت؟",
+                category: "التقنية والألعاب",
+                question: "لو قيمر يبي يضبط سيت أب البي سي، وش أكثر قطعة يدلع نفسه فيها؟",
                 answers: [
-                    { text: "تروح لغرض وتطلع بمليون حاجة", points: 49 },
-                    { text: "تنسى أهم غرض أرسلوك عشانه", points: 26 },
-                    { text: "طابور الحساب طويل ومعلق", points: 13 },
-                    { text: "عربة المقاضي كفراتها خربانة تفشل", points: 8 },
-                    { text: "تدور الشيء وما تلقى الموظف يدلك", points: 4 }
+                    { text: "إضاءات نيون وشاشات RGB خلف الطاولة", points: 42 },
+                    { text: "كرسي قيمنق مريح مخصص للمشاوير الطويلة", points: 29 },
+                    { text: "ماوس وكيبورد ميكانيكي صوته عالي", points: 18 },
+                    { text: "حامل سماعة فخم وفيكجرد ألعاب", points: 11 }
+                ]
+            },
+
+            // --- الدراسة والعمل ---
+            {
+                category: "الدراسة والعمل",
+                question: "وش يسوي الطالب السعودي في القاعة بآخر ربع ساعة قبل الاختبار النهائي؟",
+                answers: [
+                    { text: "يذاكر المذكرة كاملة بـ دقيقتين نظام تلقيم", points: 53 },
+                    { text: "يسأل خوية «وش حذفت الدكتورة؟»", points: 24 },
+                    { text: "يدعي ويستغفر وربك يسهلها", points: 15 },
+                    { text: "يقرر ينام ويقول اللي يجي من الله حياه الله", points: 8 }
                 ]
             },
             {
-                category: "عادات وقت الاختبارات",
-                question: "وش الحركة الشهيرة اللي كل الطلاب يسوونها في أسبوع الفاينلات والاختبارات؟",
+                category: "الدراسة والعمل",
+                question: "وش أكثر شيء يرفع ضغط الموظفين ويزعجهم ببيئة العمل؟",
                 answers: [
-                    { text: "المواصل والسهر لين الصبح", points: 51 },
-                    { text: "شرب شاهي وقهوة بكميات مرعبة", points: 24 },
-                    { text: "تأجيل المذاكرة ليلة الاختبار", points: 14 },
-                    { text: "ترتيب الغرفة فجأة عشان ينحاش من الكتاب", points: 8 },
-                    { text: "التخطيط لجدول سحبيات ما يتنفذ", points: 3 }
+                    { text: "اجتماع مفاجئ ماله داعي بآخر الدوام", points: 48 },
+                    { text: "المدير اللي يرسل بقروب الواتساب بالويكند", points: 28 },
+                    { text: "الزميل اللي يسولف واجد وما يخليك تشتغل", points: 16 },
+                    { text: "مكيف المكتب البارد بزيادة أو خربان", points: 8 }
+                ]
+            },
+
+            // --- السفر والترفيه ---
+            {
+                category: "السفر والترفيه",
+                question: "وش الغرض التافه اللي دايمًا تنساه بشنطة السفر وإذا وصلت هناك تنجلط؟",
+                answers: [
+                    { text: "فيش التحويل الثلاثي للشاحن", points: 43 },
+                    { text: "فرشاة ومعجون الأسنان", points: 27 },
+                    { text: "شاحن الساعة أو السماعة", points: 19 },
+                    { text: "المقص أو المزيل", points: 11 }
                 ]
             },
             {
-                category: "الستريمرز وصناع المحتوى",
-                question: "لو سألنا متابع وش أكثر لقطة حماسية تخليه يدعم البث أو يتابع المقطع؟",
+                category: "السفر والترفيه",
+                question: "وش الفعالية الرسمية للشباب بالويكند إذا طفشوا بالديرة؟",
                 answers: [
-                    { text: "ردة فعل قوية ومضحكة من الستريمر", points: 41 },
-                    { text: "لعب أسطوري وكلتشات مستحيلة", points: 31 },
-                    { text: "سوالف وقصص جانبية فخمة", points: 15 },
-                    { text: "تحديات قوية مع ستريمرز ثانين", points: 9 },
-                    { text: "توزيع هدايا وأكواد للمتابعين", points: 4 }
+                    { text: "الدوران بالسيارة بالتحلية أو الشوارع العامة", points: 46 },
+                    { text: "التجمع بالاستراحة وطقطقة بلوت وبلايستيشن", points: 32 },
+                    { text: "روحة لكافيه جديد نجرب هبتهم", points: 14 },
+                    { text: "حجز ملعب كورة ولعب تحدي قوي", points: 8 }
+                ]
+            },
+
+            // --- أسئلة عامة قوية ---
+            {
+                category: "أسئلة عامة قوية",
+                question: "وش الشيء اللي لو اختفى فجأة من العالم، بتصير كارثة والناس تضيع؟",
+                answers: [
+                    { text: "شبكة الإنترنت والواي فاي", points: 57 },
+                    { text: "الكهرباء والطاقة", points: 25 },
+                    { text: "خرائط جوجل وموقع الجي بي إس", points: 11 },
+                    { text: "فلوس الكاش والبطاقات", points: 7 }
                 ]
             },
             {
-                category: "محلات الحلاقة الرجالية",
-                question: "وش أكثر غلطة يسويها الحلاق وتخليك تندم إنك جيت عنده؟",
+                category: "أسئلة عامة قوية",
+                question: "وش الشيء اللي يتفق 100% من الناس على حبه ومستحيل أحد يكرهه؟",
                 answers: [
-                    { text: "يخرب خط اللحية أو يقصرها زيادة", points: 53 },
-                    { text: "يسوي قصة من راسه ما طلبتها", points: 24 },
-                    { text: "يدك خشنة ويعورك بالمكينة", points: 11 },
-                    { text: "يقعد يسولف واجد ويعطل الشغل", points: 8 },
-                    { text: "الانتظار عنده يطول بالساعات", points: 4 }
-                ]
-            },
-            {
-                category: "الطقس والأجواء الماطرة",
-                question: "إذا نزل مطر وضباب فجأة، وش أول خطة تخطر في بال الشباب يسوونها؟",
-                answers: [
-                    { text: "الخروج للمطلات والأماكن المفتوحة", points: 47 },
-                    { text: "شبة نار وجلسة شاهي حطب", points: 29 },
-                    { text: "تشغيل السيارة والدوران بالشوارع", points: 14 },
-                    { text: "تصوير السنابات وتوثيق الجو اللطيف", points: 7 },
-                    { text: "النوم والكنكنة تحت البطانية", points: 3 }
+                    { text: "النوم والانسداح بدون منبه", points: 52 },
+                    { text: "الفلوس والتحويلات البنكية غير المتوقعة", points: 31 },
+                    { text: "الأكل اللذيذ وهو حار", points: 12 },
+                    { text: "الإجازات الطويلة المفاجئة", points: 5 }
                 ]
             }
         ];
@@ -221,8 +268,9 @@
         const initialRoomState = (clearScores = false, currentTeams = null) => {
             const defaultTeams = {};
             for(let i=1; i<=8; i++) {
+                const existingName = currentTeams?.[`team${i}`]?.name;
                 defaultTeams[`team${i}`] = { 
-                    name: currentTeams && !clearScores ? (currentTeams[`team${i}`]?.name || `فريق ${i}`) : `فريق ${i}`, 
+                    name: existingName && existingName.trim() !== "" ? existingName : `فريق ${i}`, 
                     score: clearScores ? 0 : (currentTeams?.[`team${i}`]?.score || 0), 
                     errors: 0 
                 };
@@ -238,8 +286,6 @@
             const [room, setRoom] = React.useState('');
             const [gameState, setGameState] = React.useState(initialRoomState());
             const [localTeamName, setLocalTeamName] = React.useState('');
-            
-            // حالات جيت هب Dropdown الجديدة
             const [showGithubMenu, setShowGithubMenu] = React.useState(false);
             const [gitSearch, setGitSearch] = React.useState('');
 
@@ -287,7 +333,6 @@
                 }
             };
 
-            // تفعيل جولة معينة يدوياً أو عشوائياً
             const deploySelectedRound = (roundObj) => {
                 const resetErrors = {};
                 Object.keys(gameState.teams).forEach(k => { resetErrors[`teams/${k}/errors`] = 0; });
@@ -339,7 +384,7 @@
             };
 
             const resetWholeRoomState = () => {
-                if(confirm("هل أنت متأكد من تصفير وإعادة تعيين الغرفة بالكامل للبدء من الصفر؟")) {
+                if(confirm("هل أنت متأكد من تصفير النقاط؟ (سيتم الحفاظ على أسماء اللاعبين الحاليين دون تغيير)")) {
                     set(ref(db, `rooms/${room}`), initialRoomState(true, gameState.teams));
                 }
             };
@@ -357,7 +402,6 @@
                 if (localTeamName.trim()) updateDB({ [`teams/${role}/name`]: localTeamName.trim() });
             };
 
-            // تصفية الجولات بناءً على كلمة البحث لـ GitHub Switcher
             const filteredRounds = CURATED_ROUNDS.filter(r => 
                 r.category.toLowerCase().includes(gitSearch.toLowerCase()) || 
                 r.question.toLowerCase().includes(gitSearch.toLowerCase())
@@ -397,10 +441,14 @@
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 bg-[#0B132B] p-2 rounded-xl border border-blue-950">
-                                <span className="text-xs text-blue-400 font-bold whitespace-nowrap">فريقك:</span>
+                                <span className="text-xs text-blue-400 font-bold whitespace-nowrap">اسمك باللعبة:</span>
                                 <input className="bg-transparent text-white font-bold text-sm w-full outline-none focus:text-blue-400" 
-                                       value={localTeamName} onChange={e => setLocalTeamName(e.target.value)} placeholder="اكتب اسم الفريق هنا..." />
+                                       value={localTeamName} onChange={e => setLocalTeamName(e.target.value)} placeholder="اكتب أسماءكم هنا..." />
                                 <button onClick={saveTeamName} className="bg-blue-600 text-white p-1.5 px-3 rounded-lg text-xs font-bold whitespace-nowrap active:scale-95 transition-all">✔️ حفظ</button>
+                            </div>
+                            
+                            <div className="bg-gradient-to-r from-amber-600 to-amber-500 text-slate-950 font-black text-center p-2.5 rounded-xl text-xs shadow-inner mt-1 animate-pulse">
+                                🏆 مجموع نقاطكم الحالية: {gameState.teams[role]?.score || 0} ن
                             </div>
                         </div>
 
@@ -433,7 +481,7 @@
 
                         <div className="flex justify-center pb-4">
                             {hasThreeErrors ? (
-                                <div className="w-44 h-44 rounded-full bg-red-950/80 border-4 border-red-700 flex flex-col items-center justify-center shadow-xl animate-pulse">
+                                <div className="w-44 h-44 rounded-full bg-red-950/80 border-4 border-red-700 flex flex-col items-center justify-center shadow-xl">
                                     <span className="text-white font-black text-lg">مستبعد!</span>
                                     <span className="text-red-400 text-[10px] mt-0.5">3 أخطاء</span>
                                 </div>
@@ -452,12 +500,10 @@
             const renderMainDashboard = (isHostMode) => {
                 return (
                     <div className="p-4 md:p-6 min-h-screen flex flex-col justify-between max-w-[1600px] mx-auto relative">
-                        
-                        {/* الهيدر والنتائج */}
                         <div className="panel-bg rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4 mb-4 shadow-xl">
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setRole(null)} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-4 py-1.5 rounded-xl text-sm transition-all">🚪 خروج</button>
-                                <span className="bg-blue-600 text-white font-bold px-4 py-1.5 rounded-xl text-sm">{isHostMode ? 'لوحة المقدم' : 'شاشة الجمهور العامة'}</span>
+                                <span className="bg-blue-600 text-white font-bold px-4 py-1.5 rounded-xl text-sm">{isHostMode ? 'لوحة المقدم' : 'شاشة العرض'}</span>
                                 <span className="bg-amber-500/20 text-amber-400 font-bold px-4 py-1.5 rounded-xl text-sm border border-amber-500/30">الجولة {gameState.roundNumber}</span>
                             </div>
                             
@@ -477,13 +523,10 @@
                             <div className="font-bold text-amber-400 text-sm font-mono">الغرفة: <span className="text-white text-base">{room}</span></div>
                         </div>
 
-                        {/* لوحة التحكم الرئيسية */}
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start my-auto w-full relative">
-                            
-                            {/* يسار الحاوية - التحكم (يظهر للمقدم فقط) */}
                             <div className="lg:col-span-3 flex flex-col gap-4 w-full relative">
                                 <div className="panel-bg rounded-2xl p-4 shadow-lg">
-                                    <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">ترتيب الكبس والدور الحلي</h4>
+                                    <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">ترتيب الكبس والدور الحالي</h4>
                                     <div className="bg-[#0B132B] border border-blue-900/60 rounded-xl p-4 min-h-[90px] flex flex-col justify-center gap-2">
                                         {gameState.activeTeam ? (
                                             <div>
@@ -502,7 +545,6 @@
                                     <div className="panel-bg rounded-2xl p-4 shadow-lg flex flex-col gap-3 relative">
                                         <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wide">أوامر الجولات والتحكم</h4>
                                         
-                                        {/* زر جيت هب المطور لفتح القائمة المنسدلة الذكية */}
                                         <div className="relative">
                                             <button onClick={() => setShowGithubMenu(!showGithubMenu)} 
                                                     className="w-full bg-[#1F2937] hover:bg-[#374151] border border-[#4B5563] text-white font-bold p-3 rounded-xl text-xs flex items-center justify-between transition-all shadow-md">
@@ -510,22 +552,19 @@
                                                 <span className="text-[10px] opacity-60">▾</span>
                                             </button>
 
-                                            {/* القائمة المنبثقة الذكية المستوحاة بالكامل من GitHub Branch Switcher في image_9.png */}
                                             {showGithubMenu && (
-                                                <div className="absolute right-0 top-full mt-2 w-72 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-50 flex flex-col text-right overflow-hidden animate-fadeIn">
+                                                <div className="absolute right-0 top-full mt-2 w-72 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-50 flex flex-col text-right overflow-hidden">
                                                     <div className="p-3 border-b border-[#30363d] flex justify-between items-center bg-[#1f242c]">
                                                         <span className="text-xs font-bold text-[#c9d1d9]">اختر التصنيف أو ابحث بالكلمة</span>
                                                         <button onClick={() => setShowGithubMenu(false)} className="text-[#8b949e] hover:text-white font-bold text-sm">✕</button>
                                                     </div>
                                                     
-                                                    {/* خانة البحث الداخلية */}
                                                     <div className="p-2 border-b border-[#30363d]">
                                                         <input type="text" value={gitSearch} onChange={e => setGitSearch(e.target.value)}
                                                                className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg p-2 text-xs text-white outline-none focus:border-blue-500"
                                                                placeholder="ابحث عن تصنيف أو كلمة داخل السؤال..." />
                                                     </div>
 
-                                                    {/* قائمة التمرير اللانهائية */}
                                                     <div className="max-h-64 overflow-y-auto flex flex-col bg-[#0d1117]">
                                                         {filteredRounds.length > 0 ? (
                                                             filteredRounds.map((round, rIdx) => (
@@ -539,16 +578,12 @@
                                                             <div className="p-4 text-center text-xs text-slate-500">لا توجد جولات تطابق البحث!</div>
                                                         )}
                                                     </div>
-                                                    
-                                                    <div className="p-2 bg-[#1f242c] text-[10px] text-center text-slate-500 font-mono">
-                                                        إجمالي الجولات المتاحة: {CURATED_ROUNDS.length}
-                                                    </div>
                                                 </div>
                                             )}
                                         </div>
 
                                         <button onClick={triggerRandomCategory} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-xl text-xs transition-all shadow-md">
-                                            🎲 اختيار جولة عشوائية سريعة
+                                            🎲 جولة عشوائية سريعة
                                         </button>
                                         
                                         {gameState.roundActive && (
@@ -557,7 +592,7 @@
                                                     ❌ احتساب خطأ على الفريق الحالي
                                                 </button>
                                                 <button onClick={passTurnToNextInQueue} disabled={!gameState.activeTeam} className={`w-full p-3 rounded-xl font-bold text-xs transition-all ${gameState.activeTeam ? 'bg-indigo-600 text-white hover:bg-indigo-700' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>
-                                                    ➡️ تحويل الدور للفريق التالي بالترتيب
+                                                    ➡️ تحويل الدور للفريق التالي
                                                 </button>
                                                 <button onClick={endRound} className="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 p-3 rounded-xl font-bold text-xs transition-all mt-2">
                                                     🏁 إنهاء الجولة وحفظ النتائج
@@ -567,18 +602,17 @@
 
                                         <div className="border-t border-red-900/40 pt-2 mt-2">
                                             <button onClick={resetWholeRoomState} className="w-full bg-red-950/60 hover:bg-red-900/80 border border-red-800/80 text-red-200 p-2.5 rounded-xl font-bold text-xs transition-all">
-                                                🔄 إعادة تعيين وتصفير الغرفة بالكامل
+                                                🔄 تصفير النقاط وبدء قيم جديد
                                             </button>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* يمين الحاوية - لوحة اللعبة وعرض الإجابات */}
                             <div className="lg:col-span-9 w-full">
                                 {!gameState.roundActive ? (
                                     <div className="board-bg rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[450px]">
-                                        <p className="text-slate-400 text-lg font-medium animate-pulse">بانتظار قيام المقدم بتوليد جولة عشوائية أو اختيار موضوع معين...</p>
+                                        <p className="text-slate-400 text-lg font-medium animate-pulse">بانتظار قيام المقدم بتوليد جولة عشوائية أو اختيار موضوع...</p>
                                     </div>
                                 ) : (
                                     <div className="board-bg rounded-3xl p-6 md:p-8 shadow-2xl relative">
