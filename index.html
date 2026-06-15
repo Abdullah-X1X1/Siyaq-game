@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق - النسخة المنطقية الواقعية</title>
+    <title>لعبة سياق - النسخة الذكية المحدثة</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -12,6 +12,11 @@
         body { background-color: #0A1128; color: #FFFFFF; font-family: system-ui, -apple-system, sans-serif; }
         .panel-bg { background-color: #111936; border: 1px solid #1E295D; }
         .board-bg { background-color: #0F1631; border: 1px solid #1E295D; }
+        /* تخصيص السكرول بار ليكون ناعم مثل جيت هب */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0B132B; }
+        ::-webkit-scrollbar-thumb { background: #1E295D; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3b82f6; }
     </style>
 </head>
 <body class="min-h-screen select-none">
@@ -23,7 +28,7 @@
         const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
         const db = getDatabase(initializeApp(firebaseConfig));
 
-        // بنك الأسئلة الحقيقي والمنطقي والمصمم يدوياً لمحاكاة "سألنا 100 شخص" بدقة عالية
+        // بنك الأسئلة الضخم والموسع - مصمم ومنطقي يدوياً 100% لجمعاتكم ومشاريعكم واهتماماتكم
         const CURATED_ROUNDS = [
             {
                 category: "ألعاب الشوتر (FPS)",
@@ -49,7 +54,7 @@
             },
             {
                 category: "القهوة المختصة",
-                question: "وش الشيء اللي يخرب مزاجك تماماً وأنت تشرب كوب قهوة مختصة دفعته فيه مبلغه؟",
+                question: "وش الشيء اللي يخرب مزاجك تماماً وأنت تشرب كوب قهوة مختصة دفعت فيه مبلغه؟",
                 answers: [
                     { text: "طعمها حامض بزيادة أو محروق", points: 48 },
                     { text: "الأسعار مرتفعة ومبالغ فيها", points: 25 },
@@ -70,6 +75,39 @@
                 ]
             },
             {
+                category: "ألعاب العالم المفتوح (RPG)",
+                question: "وش الموقف اللي يصير لك في ألعاب القصة (مثل ريد ديد أو سايبربانك) ويخرب عليك الاندماج؟",
+                answers: [
+                    { text: "قلتشات غبية تيرّب اللعبة", points: 43 },
+                    { text: "يموت الحصان أو تخرب سيارتك الفخمة", points: 27 },
+                    { text: "ملفات الحفظ تطير وتبدأ من الصفر", points: 18 },
+                    { text: "مهمة جانبية مشوارها طويل وممل", points: 9 },
+                    { text: "حرق أحداث القصة من واحد بالنت", points: 3 }
+                ]
+            },
+            {
+                category: "الدوام والمحاضرات الصباحية",
+                question: "سألنا طلاب الجامعة وش أصعب شيء يواجهونه في المحاضرات اللي الساعة 8 الصباح؟",
+                answers: [
+                    { text: "القومه من النوم ومقاومة الفراش", points: 56 },
+                    { text: "زحمة الخطوط ومواقف الجامعة", points: 21 },
+                    { text: "الدكتور يدقق على التحضير والتأخير", points: 12 },
+                    { text: "الفهم يستوعب صفر بدون كافيين", points: 8 },
+                    { text: "الكلاس يكون بارد ومكيفه قوي يدوخ", points: 3 }
+                ]
+            },
+            {
+                category: "سيارات الوحوش والرياضية",
+                question: "وش الشيء اللي يخلي الشباب يعشقون السيارات الرياضية والقديمة (مثل الـ GT والوحوش)؟",
+                answers: [
+                    { text: "صوت الطرب والمكينة القوية", points: 46 },
+                    { text: "الهيبة والشكل الخارجي الفخم", points: 27 },
+                    { text: "التعديل والطقطقة عليها بالبيت", points: 13 },
+                    { text: "القومة والتسارع السريع", points: 9 },
+                    { text: "المتعة في المنعطفات والدرفت", points: 5 }
+                ]
+            },
+            {
                 category: "مطاعم الشاورما",
                 question: "طلبنا من 100 واحد يقولون لنا وش أهم ميزة تخلي الشاورما خرافية وصاروخية؟",
                 answers: [
@@ -78,17 +116,6 @@
                     { text: "تكون مليانة دجاج ومو ناشفة", points: 12 },
                     { text: "المخلل والبطاطس موزونة صح", points: 8 },
                     { text: "الشطة الحارة تعطيها النكهة", points: 3 }
-                ]
-            },
-            {
-                category: "سيارات الدفع الخلفي والرياضية",
-                question: "وش الشيء اللي يخلي الشباب يعشقون السيارات الرياضية والقديمة (مثل الـ GT والوحوش)؟",
-                answers: [
-                    { text: "صوت الطرب والمكينة القوية", points: 46 },
-                    { text: "الهيبة والشكل الخارجي الفخم", points: 27 },
-                    { text: "التعديل والطقطقة عليها بالبيت", points: 13 },
-                    { text: "القومة والتسارع السريع", points: 9 },
-                    { text: "المتعة في المنعطفات والدرفت", points: 5 }
                 ]
             },
             {
@@ -134,6 +161,39 @@
                     { text: "ترتيب الغرفة فجأة عشان ينحاش من الكتاب", points: 8 },
                     { text: "التخطيط لجدول سحبيات ما يتنفذ", points: 3 }
                 ]
+            },
+            {
+                category: "الستريمرز وصناع المحتوى",
+                question: "لو سألنا متابع وش أكثر لقطة حماسية تخليه يدعم البث أو يتابع المقطع؟",
+                answers: [
+                    { text: "ردة فعل قوية ومضحكة من الستريمر", points: 41 },
+                    { text: "لعب أسطوري وكلتشات مستحيلة", points: 31 },
+                    { text: "سوالف وقصص جانبية فخمة", points: 15 },
+                    { text: "تحديات قوية مع ستريمرز ثانين", points: 9 },
+                    { text: "توزيع هدايا وأكواد للمتابعين", points: 4 }
+                ]
+            },
+            {
+                category: "محلات الحلاقة الرجالية",
+                question: "وش أكثر غلطة يسويها الحلاق وتخليك تندم إنك جيت عنده؟",
+                answers: [
+                    { text: "يخرب خط اللحية أو يقصرها زيادة", points: 53 },
+                    { text: "يسوي قصة من راسه ما طلبتها", points: 24 },
+                    { text: "يدك خشنة ويعورك بالمكينة", points: 11 },
+                    { text: "يقعد يسولف واجد ويعطل الشغل", points: 8 },
+                    { text: "الانتظار عنده يطول بالساعات", points: 4 }
+                ]
+            },
+            {
+                category: "الطقس والأجواء الماطرة",
+                question: "إذا نزل مطر وضباب فجأة، وش أول خطة تخطر في بال الشباب يسوونها؟",
+                answers: [
+                    { text: "الخروج للمطلات والأماكن المفتوحة", points: 47 },
+                    { text: "شبة نار وجلسة شاهي حطب", points: 29 },
+                    { text: "تشغيل السيارة والدوران بالشوارع", points: 14 },
+                    { text: "تصوير السنابات وتوثيق الجو اللطيف", points: 7 },
+                    { text: "النوم والكنكنة تحت البطانية", points: 3 }
+                ]
             }
         ];
 
@@ -169,8 +229,7 @@
             }
             return {
                 currentCategory: "", activeTeam: "", buzzerOpen: true, revealed: {0:false,1:false,2:false,3:false,4:false}, roundActive: false, roundNumber: 1, questionText: "", currentAnswers: [],
-                buzzerQueue: [],
-                teams: defaultTeams
+                buzzerQueue: [], teams: defaultTeams
             };
         };
 
@@ -179,6 +238,10 @@
             const [room, setRoom] = React.useState('');
             const [gameState, setGameState] = React.useState(initialRoomState());
             const [localTeamName, setLocalTeamName] = React.useState('');
+            
+            // حالات جيت هب Dropdown الجديدة
+            const [showGithubMenu, setShowGithubMenu] = React.useState(false);
+            const [gitSearch, setGitSearch] = React.useState('');
 
             React.useEffect(() => {
                 if (!room) return;
@@ -194,7 +257,6 @@
                             const prevErr = Object.values(prev.teams || {}).reduce((acc, t) => acc + (t.errors || 0), 0);
                             const newErr = Object.values(data.teams || {}).reduce((acc, t) => acc + (t.errors || 0), 0);
                             if (newErr > prevErr) playSynthSound('wrong');
-
                             return { ...prev, ...data };
                         });
                     } else if (role === 'host') {
@@ -218,34 +280,33 @@
                     runTransaction(roomRef, (currentData) => {
                         if (!currentData) return currentData;
                         if (!currentData.buzzerQueue) currentData.buzzerQueue = [];
-                        if (!currentData.buzzerQueue.includes(teamKey)) {
-                            currentData.buzzerQueue.push(teamKey);
-                        }
-                        if (!currentData.activeTeam) {
-                            currentData.activeTeam = currentData.buzzerQueue[0];
-                        }
+                        if (!currentData.buzzerQueue.includes(teamKey)) currentData.buzzerQueue.push(teamKey);
+                        if (!currentData.activeTeam) currentData.activeTeam = currentData.buzzerQueue[0];
                         return currentData;
                     });
                 }
             };
 
-            const triggerRandomCategory = () => {
-                // اختيار عشوائي ذكي لجولة مصممة يدوياً ومنطقية بالكامل
-                const randomRound = CURATED_ROUNDS[Math.floor(Math.random() * CURATED_ROUNDS.length)];
+            // تفعيل جولة معينة يدوياً أو عشوائياً
+            const deploySelectedRound = (roundObj) => {
                 const resetErrors = {};
                 Object.keys(gameState.teams).forEach(k => { resetErrors[`teams/${k}/errors`] = 0; });
                 
                 updateDB({
-                    currentCategory: randomRound.category,
-                    questionText: randomRound.question,
-                    currentAnswers: randomRound.answers, // مرتبة مسبقاً من الأعلى للأقل تنازلياً
+                    currentCategory: roundObj.category,
+                    questionText: roundObj.question,
+                    currentAnswers: roundObj.answers,
                     roundActive: true,
                     revealed: {0:false,1:false,2:false,3:false,4:false},
-                    activeTeam: "",
-                    buzzerQueue: [],
-                    buzzerOpen: true,
-                    ...resetErrors
+                    activeTeam: "", buzzerQueue: [], buzzerOpen: true, ...resetErrors
                 });
+                setShowGithubMenu(false);
+                setGitSearch('');
+            };
+
+            const triggerRandomCategory = () => {
+                const randomRound = CURATED_ROUNDS[Math.floor(Math.random() * CURATED_ROUNDS.length)];
+                deploySelectedRound(randomRound);
             };
 
             const triggerWrongAnswer = () => {
@@ -293,14 +354,14 @@
             };
 
             const saveTeamName = () => {
-                if (localTeamName.trim()) {
-                    updateDB({ [`teams/${role}/name`]: localTeamName.trim() });
-                }
+                if (localTeamName.trim()) updateDB({ [`teams/${role}/name`]: localTeamName.trim() });
             };
 
-            const logout = () => {
-                setRole(null);
-            };
+            // تصفية الجولات بناءً على كلمة البحث لـ GitHub Switcher
+            const filteredRounds = CURATED_ROUNDS.filter(r => 
+                r.category.toLowerCase().includes(gitSearch.toLowerCase()) || 
+                r.question.toLowerCase().includes(gitSearch.toLowerCase())
+            );
 
             if (!role) return (
                 <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-4 max-w-md mx-auto">
@@ -328,7 +389,7 @@
                     <div className="flex flex-col justify-between min-h-screen p-4 max-w-2xl mx-auto w-full">
                         <div className="panel-bg rounded-2xl p-4 flex flex-col gap-3 w-full shadow-md">
                             <div className="flex justify-between items-center text-xs text-slate-400">
-                                <button onClick={logout} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-3 py-1 rounded-lg transition-all">🚪 خروج</button>
+                                <button onClick={() => setRole(null)} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-3 py-1 rounded-lg transition-all">🚪 خروج</button>
                                 <div className="flex gap-1">
                                     {[1, 2, 3].map(i => (
                                         <div key={i} className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] border ${gameState.teams[role]?.errors >= i ? 'bg-red-600 border-red-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-600'}`}>X</div>
@@ -367,7 +428,7 @@
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-center text-slate-500 text-xs py-12">بانتظار أن يبدأ المقدم جولة عشوائية جديدة...</div>
+                            <div className="text-center text-slate-500 text-xs py-12">بانتظار أن يبدأ المقدم جولة عشوائية أو يختار موضوعاً...</div>
                         )}
 
                         <div className="flex justify-center pb-4">
@@ -390,10 +451,12 @@
 
             const renderMainDashboard = (isHostMode) => {
                 return (
-                    <div className="p-4 md:p-6 min-h-screen flex flex-col justify-between max-w-[1600px] mx-auto">
+                    <div className="p-4 md:p-6 min-h-screen flex flex-col justify-between max-w-[1600px] mx-auto relative">
+                        
+                        {/* الهيدر والنتائج */}
                         <div className="panel-bg rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4 mb-4 shadow-xl">
                             <div className="flex items-center gap-3">
-                                <button onClick={logout} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-4 py-1.5 rounded-xl text-sm transition-all">🚪 خروج</button>
+                                <button onClick={() => setRole(null)} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-4 py-1.5 rounded-xl text-sm transition-all">🚪 خروج</button>
                                 <span className="bg-blue-600 text-white font-bold px-4 py-1.5 rounded-xl text-sm">{isHostMode ? 'لوحة المقدم' : 'شاشة الجمهور العامة'}</span>
                                 <span className="bg-amber-500/20 text-amber-400 font-bold px-4 py-1.5 rounded-xl text-sm border border-amber-500/30">الجولة {gameState.roundNumber}</span>
                             </div>
@@ -414,11 +477,13 @@
                             <div className="font-bold text-amber-400 text-sm font-mono">الغرفة: <span className="text-white text-base">{room}</span></div>
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start my-auto w-full">
+                        {/* لوحة التحكم الرئيسية */}
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start my-auto w-full relative">
                             
-                            <div className="lg:col-span-3 flex flex-col gap-4 w-full">
+                            {/* يسار الحاوية - التحكم (يظهر للمقدم فقط) */}
+                            <div className="lg:col-span-3 flex flex-col gap-4 w-full relative">
                                 <div className="panel-bg rounded-2xl p-4 shadow-lg">
-                                    <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">ترتيب الكبس والدور الحالي</h4>
+                                    <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">ترتيب الكبس والدور الحلي</h4>
                                     <div className="bg-[#0B132B] border border-blue-900/60 rounded-xl p-4 min-h-[90px] flex flex-col justify-center gap-2">
                                         {gameState.activeTeam ? (
                                             <div>
@@ -434,10 +499,56 @@
                                 </div>
 
                                 {isHostMode && (
-                                    <div className="panel-bg rounded-2xl p-4 shadow-lg flex flex-col gap-3">
-                                        <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wide">أوامر التحكم الذكية</h4>
-                                        <button onClick={triggerRandomCategory} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-4 rounded-xl text-sm transition-all shadow-md">
-                                            🎲 اختيار تصنيف وسؤال عشوائي فوراً
+                                    <div className="panel-bg rounded-2xl p-4 shadow-lg flex flex-col gap-3 relative">
+                                        <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wide">أوامر الجولات والتحكم</h4>
+                                        
+                                        {/* زر جيت هب المطور لفتح القائمة المنسدلة الذكية */}
+                                        <div className="relative">
+                                            <button onClick={() => setShowGithubMenu(!showGithubMenu)} 
+                                                    className="w-full bg-[#1F2937] hover:bg-[#374151] border border-[#4B5563] text-white font-bold p-3 rounded-xl text-xs flex items-center justify-between transition-all shadow-md">
+                                                <span>📂 إدارة الجولات والبحث عن موضوع</span>
+                                                <span className="text-[10px] opacity-60">▾</span>
+                                            </button>
+
+                                            {/* القائمة المنبثقة الذكية المستوحاة بالكامل من GitHub Branch Switcher في image_9.png */}
+                                            {showGithubMenu && (
+                                                <div className="absolute right-0 top-full mt-2 w-72 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-50 flex flex-col text-right overflow-hidden animate-fadeIn">
+                                                    <div className="p-3 border-b border-[#30363d] flex justify-between items-center bg-[#1f242c]">
+                                                        <span className="text-xs font-bold text-[#c9d1d9]">اختر التصنيف أو ابحث بالكلمة</span>
+                                                        <button onClick={() => setShowGithubMenu(false)} className="text-[#8b949e] hover:text-white font-bold text-sm">✕</button>
+                                                    </div>
+                                                    
+                                                    {/* خانة البحث الداخلية */}
+                                                    <div className="p-2 border-b border-[#30363d]">
+                                                        <input type="text" value={gitSearch} onChange={e => setGitSearch(e.target.value)}
+                                                               className="w-full bg-[#0d1117] border border-[#30363d] rounded-lg p-2 text-xs text-white outline-none focus:border-blue-500"
+                                                               placeholder="ابحث عن تصنيف أو كلمة داخل السؤال..." />
+                                                    </div>
+
+                                                    {/* قائمة التمرير اللانهائية */}
+                                                    <div className="max-h-64 overflow-y-auto flex flex-col bg-[#0d1117]">
+                                                        {filteredRounds.length > 0 ? (
+                                                            filteredRounds.map((round, rIdx) => (
+                                                                <button key={rIdx} onClick={() => deploySelectedRound(round)}
+                                                                        className="w-full text-right p-3 hover:bg-[#1f242c] border-b border-[#21262d]/50 text-xs text-[#c9d1d9] hover:text-blue-400 transition-all flex flex-col gap-0.5">
+                                                                    <span className="font-bold text-blue-500 text-[10px]">📁 {round.category}</span>
+                                                                    <span className="text-slate-300 truncate w-full">{round.question}</span>
+                                                                </button>
+                                                            ))
+                                                        ) : (
+                                                            <div className="p-4 text-center text-xs text-slate-500">لا توجد جولات تطابق البحث!</div>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    <div className="p-2 bg-[#1f242c] text-[10px] text-center text-slate-500 font-mono">
+                                                        إجمالي الجولات المتاحة: {CURATED_ROUNDS.length}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <button onClick={triggerRandomCategory} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold p-3 rounded-xl text-xs transition-all shadow-md">
+                                            🎲 اختيار جولة عشوائية سريعة
                                         </button>
                                         
                                         {gameState.roundActive && (
@@ -463,10 +574,11 @@
                                 )}
                             </div>
 
+                            {/* يمين الحاوية - لوحة اللعبة وعرض الإجابات */}
                             <div className="lg:col-span-9 w-full">
                                 {!gameState.roundActive ? (
                                     <div className="board-bg rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[450px]">
-                                        <p className="text-slate-400 text-lg font-medium animate-pulse">بانتظار قيام المقدم بتوليد جولة عشوائية جديدة...</p>
+                                        <p className="text-slate-400 text-lg font-medium animate-pulse">بانتظار قيام المقدم بتوليد جولة عشوائية أو اختيار موضوع معين...</p>
                                     </div>
                                 ) : (
                                     <div className="board-bg rounded-3xl p-6 md:p-8 shadow-2xl relative">
