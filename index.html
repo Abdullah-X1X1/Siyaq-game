@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق - النسخة الفخمة المعتمدة</title>
+    <title>لعبة سياق - النسخة العامية المعتمدة</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -23,10 +23,10 @@
         const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
         const db = getDatabase(initializeApp(firebaseConfig));
 
-        // مصفوفة الـ 200 تصنيف المتنوعة لضمان أقصى درجات التنوع والمفاجأة باللعب
+        // 200 تصنيف ممتع ومنوع بأسماء عامية دارجة وقريبة من الشباب
         const CATEGORIES_200 = [
             "طبخ وأكلات شعبية", "عادات رمضانية", "رحلات البر والكشتات", "سيارات رياضية", "مشروبات ساخنة", "تطبيقات الجوال", "ألعاب الكمبيوتر", "صناعة القهوة المختصة", "وجهات سياحية محلية", "عادات الصباح",
-            "ماركات سيارات فخمة", "حلويات العيد", "أثاث المجالس الكلاسيك", "ستريمرز وصناع محتوى", "أفلام غموض وإثارة", "عادات الشتاء", "مشتريات السوبرماركت", "أشياء تضيع في البيت", "تجهيزات السفر", "رياضة كرة القدم",
+            "ماركات سيارات فخمة", "حلويات العيد", "أثاث المجالس الكلاسيك", "ستريمرز وصناع محتوى", "أفلام غموض وإثارة", "عادات الشتاء", "مشتريات السوبرمارکت", "أشياء تضيع في البيت", "تجهيزات السفر", "رياضة كرة القدم",
             "ألعاب الطاولة والورق", "مأكولات سريعة", "برامج التواصل الاجتماعي", "أجهزة ذكية", "هوايات شبابية", "مشاكل السيارات الشائعة", "أنواع التمور", "عطورات شتوية", "أغراض في المحفظة", "أماكن تجمع الأصحاب",
             "تحديات القيمنق", "طرق تحضير القهوة", "أشياء في لوحة السيارة", "أغراض السفر الأساسية", "تطبيقات التوصيل", "مطاعم البرجر", "مشروبات باردة منعشة", "عادات وقت الاختبارات", "أغراض المطبخ الأساسية", "هدايا المناسبات",
             "أدوات الجيمنق والبي سي", "شاشات قيمنق", "ملابس الشتاء الرسمية", "عادات قيادة السيارة", "أشياء تشتريها من المخبز", "أماكن الكشتات", "ألعاب الجيل القديم", "أفلام سينمائية شهيرة", "تجهيزات النادي الرياضي", "تطبيقات الإنتاجية",
@@ -42,24 +42,23 @@
             "أغراض فوق الثلاجة", "عادات المباركة بالنجاح", "أكلات حارة وسبايسي", "مشروبات الغازات المنعشة", "مستلزمات الخياطة والتفصيل", "تطبيقات الحماية والأمان", "أدوات الطبخ الكهربائية", "ألعاب المحاكاة الواقعية", "أشياء تزيد من قيمة السيارة", "أطباق جانبية للمشويات",
             "أماكن تنزيل الألعاب الرقمية", "عادات ترتيب المكتبة", "أغراض في الممر الداخلي", "تطبيقات التصميم الجرافيكي", "وجبات سريعة التحضير", "مشروبات الديتوكس الصحي", "مستلزمات تسلق الجبال", "تطبيقات الرياضة واللياقة", "أدوات العناية بالحدائق", "ألعاب قتال الشوارع الكلاسيكية",
             "أشياء في عدادات السيارة", "أطباق الحلى الرمضاني", "أماكن التزلج والترفيه", "عادات تهنئة المواليد", "أكلات إيطالية شهيرة", "مشروبات شتوية تقليدية", "مستلزمات ركوب الخيل", "تطبيقات رصد النجوم والفلك", "أدوات النجارة اليدوية", "ألعاب الواقع الافتراضي VR",
-            "أشياء في صندوق السيارة الخلفي", "وجبات الغداء الخفيفة", "أماكن التخييم الجبلية", "عادات الاحتفال بالانجازات", "أكلات هندية غنية بالبهارات", "مشروبات باردة بالقهوة", "مستلزمات الصيد البري", "تطبيقات الموسيقى والصوتيات", "أدوات الدهان والطلاء المنزلي", "أفلام وثائقية ملهمة"
+            "أشياء في صندوق السيارة الخلفي", "وجبات الغداء الخفيفة", "أماكن التخييم الجبلية", "عادات الاحتال بالانجازات", "أكلات هندية غنية بالبهارات", "مشروبات باردة بالقهوة", "مستلزمات الصيد البري", "تطبيقات الموسيقى والصوتيات", "أدوات الدهان والطلاء المنزلي", "أفلام وثائقية ملهمة"
         ];
 
+        // مصفوفة أسئلة وأجوبة بلهجة عامية بسيطة ومفهومة وتنازلية النقاط تلقائياً
         const generateDynamicQuestion = (catName) => {
             const randomPools = [
-                { q: `وش أكثر شيء يركز عليه الشخص إذا اختار شي يخص [${catName}]؟`, a: ["الجودة والمتانة", "السعر المناسب", "المظهر والشكل الخارجي", "السمعة والعلامة التجارية", "توصية الأصدقاء"] },
-                { q: `شيء مستحيل تستغني عنه إذا كنت مهتم بـ [${catName}]؟`, a: ["الأدوات الأساسية المعتمدة", "الميزانية المخصصة لها", "المكان المناسب والمريح", "التطبيقات المساعدة بالهاتف", "الخبرة والممارسة المستمرة"] },
-                { q: `وش أكثر موقف يقهر أو يضايقك إذا كنت تتعامل مع [${catName}]؟`, a: ["الارتفاع المفاجئ في الأسعار", "القطع أو المكونات المقلدة", "ضياع الأغراض الأساسية فجأة", "قلة الخيارات المتوفرة محلياً", "سوء الجودة عند الاستخدام"] },
-                { q: `إذا سألنا الناس عن رأيهم في أفضل ميزة لـ [${catName}] وش بيقولون؟`, a: ["توفير الوقت والجهد اليومي", "المتعة الكبيرة أثناء التجربة", "المنظر الفخم والترتيب العالي", "الراحة النفسية والجسدية", "سهولة الاستخدام والوصول"] }
+                { q: `وش أكثر شيء يركز عليه الواحد إذا جاء يشتري شيء يخص [${catName}]؟`, a: ["السعر يكون لقطة ورخيص", "الجودة والديكور الفخم", "شكلها الخارجي والمنظر", "سمعة الشركة أو البراند", "كلام الناس وتوصية الأصحاب"] },
+                { q: `وش الشيء اللي مستحيل تسحب عليه أو تستغني عنه إذا أنت راعي [${catName}]؟`, a: ["الفلوس والميزانية الجاهزة", "المكان الرايق والهادي", "الجوال والتطبيقات المهمة", "العدة والأغراض الأصلية", "الخبرة والروقان وقت الطقطقة"] },
+                { q: `وش أكثر موقف يرفع ضغطك ويزعلك إذا تعاملت مع [${catName}]؟`, a: ["الأسعار طارت فوق فجأة", "تطلع مغشوشة أو تقليد خايس", "تضيع عليك الأغراض بلحظتها", "الخيارات قليلة وتطفش", "تخرب عليك وأنت تستخدمها"] },
+                { q: `لو سألنا الناس عن أحسن ميزة في [${catName}] وش بيقولون؟`, a: ["تفك أزمة وتختصر وقتك", "وناسة ومتعة لاتوصف", "منظرها فخم ويفتح النفس", "تروق المزاج وتريح البال", "سهلة وما يبي لها تعقيد"] }
             ];
             const selected = randomPools[Math.floor(Math.random() * randomPools.length)];
-            
-            // توزيع النقاط الثابتة ليتم فرزها من الأعلى للأقل تنازلياً دائماً وبشكل قطعي لحفظ جودة اللعب
             const pointsDistribution = [50, 25, 15, 8, 2];
             const structuredAnswers = selected.a.map((txt, index) => ({
                 text: txt,
                 points: pointsDistribution[index]
-            })).sort((a, b) => b.points - a.points); // ترتيب من الأعلى للأقل
+            })).sort((a, b) => b.points - a.points);
 
             return { text: selected.q, answers: structuredAnswers };
         };
@@ -85,21 +84,28 @@
             } catch(e) {}
         };
 
+        const initialRoomState = (clearScores = false, currentTeams = null) => {
+            const defaultTeams = {};
+            for(let i=1; i<=8; i++) {
+                defaultTeams[`team${i}`] = { 
+                    name: currentTeams && !clearScores ? (currentTeams[`team${i}`]?.name || `فريق ${i}`) : `فريق ${i}`, 
+                    score: clearScores ? 0 : (currentTeams?.[`team${i}`]?.score || 0), 
+                    errors: 0 
+                };
+            }
+            return {
+                currentCategory: "", activeTeam: "", buzzerOpen: true, revealed: {0:false,1:false,2:false,3:false,4:false}, roundActive: false, roundNumber: 1, questionText: "", currentAnswers: [],
+                buzzerQueue: [],
+                teams: defaultTeams
+            };
+        };
+
         function App() {
             const [role, setRole] = React.useState(null);
             const [room, setRoom] = React.useState('');
-            const [gameState, setGameState] = React.useState({
-                currentCategory: "", activeTeam: "", buzzerOpen: true, revealed: {}, roundActive: false, roundNumber: 1, questionText: "", currentAnswers: [],
-                buzzerQueue: [],
-                teams: {
-                    team1: { name: 'فريق 1', score: 0, errors: 0 }, team2: { name: 'فريق 2', score: 0, errors: 0 },
-                    team3: { name: 'فريق 3', score: 0, errors: 0 }, team4: { name: 'فريق 4', score: 0, errors: 0 },
-                    team5: { name: 'فريق 5', score: 0, errors: 0 }, team6: { name: 'فريق 6', score: 0, errors: 0 },
-                    team7: { name: 'فريق 7', score: 0, errors: 0 }, team8: { name: 'فريق 8', score: 0, errors: 0 }
-                }
-            });
+            const [gameState, setGameState] = React.useState(initialRoomState());
+            const [localTeamName, setLocalTeamName] = React.useState('');
 
-            // نظام تتبع ذكي لبث الأصوات فورياً على كافة الأجهزة المتصلة
             React.useEffect(() => {
                 if (!room) return;
                 const roomRef = ref(db, `rooms/${room}`);
@@ -107,15 +113,10 @@
                     const data = snapshot.val();
                     if (data) {
                         setGameState(prev => {
-                            // تشغيل صوت الكبس
                             if (data.activeTeam && data.activeTeam !== prev.activeTeam) playSynthSound('buzz');
-                            
-                            // تشغيل صوت الإجابة الصحيحة
                             const prevRev = Object.values(prev.revealed || {}).filter(Boolean).length;
                             const newRev = Object.values(data.revealed || {}).filter(Boolean).length;
                             if (newRev > prevRev) playSynthSound('correct');
-
-                            // تشغيل صوت الخطأ لجميع اللاعبين والمقدم لرفع متعة التحدي
                             const prevErr = Object.values(prev.teams || {}).reduce((acc, t) => acc + (t.errors || 0), 0);
                             const newErr = Object.values(data.teams || {}).reduce((acc, t) => acc + (t.errors || 0), 0);
                             if (newErr > prevErr) playSynthSound('wrong');
@@ -123,21 +124,18 @@
                             return { ...prev, ...data };
                         });
                     } else if (role === 'host') {
-                        const freshState = {
-                            currentCategory: "", activeTeam: "", buzzerOpen: true, revealed: {0:false,1:false,2:false,3:false,4:false}, roundActive: false, roundNumber: 1, questionText: "", currentAnswers: [],
-                            buzzerQueue: [],
-                            teams: {
-                                team1: { name: 'فريق 1', score: 0, errors: 0 }, team2: { name: 'فريق 2', score: 0, errors: 0 },
-                                team3: { name: 'فريق 3', score: 0, errors: 0 }, team4: { name: 'فريق 4', score: 0, errors: 0 },
-                                team5: { name: 'فريق 5', score: 0, errors: 0 }, team6: { name: 'فريق 6', score: 0, errors: 0 },
-                                team7: { name: 'فريق 7', score: 0, errors: 0 }, team8: { name: 'فريق 8', score: 0, errors: 0 }
-                            }
-                        };
-                        set(roomRef, freshState);
+                        set(roomRef, initialRoomState());
                     }
                 });
                 return () => unsubscribe();
             }, [room, role]);
+
+            // مزامنة حقل كتابة الاسم المحلي للاعب لمنع التعليق والقفز أثناء الكتابة
+            React.useEffect(() => {
+                if (role && role.startsWith('team') && gameState.teams?.[role]) {
+                    setLocalTeamName(gameState.teams[role].name);
+                }
+            }, [role, gameState.teams]);
 
             const updateDB = (updates) => update(ref(db, `rooms/${room}`), updates);
 
@@ -161,6 +159,9 @@
             const triggerRandomCategory = () => {
                 const randomCat = CATEGORIES_200[Math.floor(Math.random() * CATEGORIES_200.length)];
                 const generated = generateDynamicQuestion(randomCat);
+                const resetErrors = {};
+                Object.keys(gameState.teams).forEach(k => { resetErrors[`teams/${k}/errors`] = 0; });
+                
                 updateDB({
                     currentCategory: randomCat,
                     questionText: generated.text,
@@ -170,8 +171,7 @@
                     activeTeam: "",
                     buzzerQueue: [],
                     buzzerOpen: true,
-                    'teams/team1/errors': 0, 'teams/team2/errors': 0, 'teams/team3/errors': 0, 'teams/team4/errors': 0,
-                    'teams/team5/errors': 0, 'teams/team6/errors': 0, 'teams/team7/errors': 0, 'teams/team8/errors': 0
+                    ...resetErrors
                 });
             };
 
@@ -204,6 +204,12 @@
                 updateDB({ currentCategory: "", roundActive: false, activeTeam: "", buzzerQueue: [], roundNumber: gameState.roundNumber + 1 });
             };
 
+            const resetWholeRoomState = () => {
+                if(confirm("هل أنت متأكد من تصفير وإعادة تعيين الغرفة بالكامل للبدء من الصفر؟")) {
+                    set(ref(db, `rooms/${room}`), initialRoomState(true, gameState.teams));
+                }
+            };
+
             const clickRevealAnswer = (idx, points) => {
                 const updates = { [`revealed/${idx}`]: true };
                 if (gameState.activeTeam) {
@@ -213,11 +219,17 @@
                 updateDB(updates);
             };
 
-            const handleTeamNameChange = (teamKey, newName) => {
-                updateDB({ [`teams/${teamKey}/name`]: newName });
+            const saveTeamName = () => {
+                if (localTeamName.trim()) {
+                    updateDB({ [`teams/${role}/name`]: localTeamName.trim() });
+                }
             };
 
-            // شاشة الدخول الرئيسية
+            const logout = () => {
+                setRole(null);
+            };
+
+            // 1. شاشة الدخول الموحدة والذكية
             if (!role) return (
                 <div className="flex flex-col items-center justify-center min-h-screen gap-6 p-4 max-w-md mx-auto">
                     <h1 className="text-6xl font-black text-blue-500 mb-2 tracking-wider">سياق</h1>
@@ -235,42 +247,43 @@
                 </div>
             );
 
-            // واجهة اللاعب مع ظهور جدول مخفي لتتبع حماس الجولة + إمكانية تعديل اسم الفريق
+            // 2. واجهة اللاعب (العامية التفاعلية) مع معالجة حفظ الاسم السلسة وزر الخروج
             if (role.startsWith('team')) {
                 const myTurn = gameState.activeTeam === role;
-                const hasThreeErrors = gameState.teams[role].errors >= 3;
+                const hasThreeErrors = gameState.teams[role]?.errors >= 3;
                 const allowed = gameState.buzzerOpen && !gameState.activeTeam && !hasThreeErrors;
                 
                 return (
                     <div className="flex flex-col justify-between min-h-screen p-4 max-w-2xl mx-auto w-full">
-                        {/* ترويسة وتعديل الاسم */}
+                        {/* ترويسة وتعديل الاسم مع ميزة الحفظ المنفصلة تلافياً لأي تعليق */}
                         <div className="panel-bg rounded-2xl p-4 flex flex-col gap-3 w-full shadow-md">
                             <div className="flex justify-between items-center text-xs text-slate-400">
-                                <span>الغرفة: {room}</span>
+                                <button onClick={logout} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-3 py-1 rounded-lg transition-all">🚪 خروج</button>
                                 <div className="flex gap-1">
                                     {[1, 2, 3].map(i => (
-                                        <div key={i} className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] border ${gameState.teams[role].errors >= i ? 'bg-red-600 border-red-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-600'}`}>X</div>
+                                        <div key={i} className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] border ${gameState.teams[role]?.errors >= i ? 'bg-red-600 border-red-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-600'}`}>X</div>
                                     ))}
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 bg-[#0B132B] p-2 rounded-xl border border-blue-950">
-                                <span className="text-xs text-blue-400 font-bold whitespace-nowrap">اسم فريقك:</span>
+                                <span className="text-xs text-blue-400 font-bold whitespace-nowrap">فريقك:</span>
                                 <input className="bg-transparent text-white font-bold text-sm w-full outline-none focus:text-blue-400" 
-                                       value={gameState.teams[role].name} onChange={e => handleTeamNameChange(role, e.target.value)} />
+                                       value={localTeamName} onChange={e => setLocalTeamName(e.target.value)} placeholder="اكتب اسم الفريق هنا..." />
+                                <button onClick={saveTeamName} className="bg-blue-600 text-white p-1.5 px-3 rounded-lg text-xs font-bold whitespace-nowrap active:scale-95 transition-all">✔️ حفظ</button>
                             </div>
                         </div>
 
-                        {/* السؤال وجدول الإجابات التفاعلي على شاشة اللاعب */}
+                        {/* بورد جولة اللاعب التفاعلي */}
                         {gameState.roundActive ? (
                             <div className="board-bg rounded-2xl p-4 my-3 flex flex-col gap-4 shadow-lg">
                                 <div className="text-center">
-                                    <p className="text-[11px] text-slate-400 mb-1">سألنا 100 شخص...</p>
+                                    <p className="text-[11px] text-slate-400 mb-1">سألنا 100 شخص والجواب بالعامية...</p>
                                     <h3 className="text-sm md:text-base font-black text-white leading-relaxed">{gameState.questionText}</h3>
                                 </div>
 
                                 <div className="grid grid-cols-1 gap-2">
                                     {gameState.currentAnswers && gameState.currentAnswers.map((ans, idx) => {
-                                        const isRevealed = gameState.revealed[idx];
+                                        const isRevealed = gameState.revealed?.[idx];
                                         return (
                                             <div key={idx} className={`rounded-xl px-3 py-2.5 flex justify-between items-center text-xs font-bold border transition-all h-12
                                                 ${isRevealed ? 'bg-[#131C38] border-emerald-500/30 text-emerald-400' : 'bg-[#0B132B]/60 border-blue-950 text-slate-500'}`}>
@@ -285,10 +298,10 @@
                                 </div>
                             </div>
                         ) : (
-                            <div className="text-center text-slate-500 text-xs py-12">بانتظار بدء الجولة من المقدم...</div>
+                            <div className="text-center text-slate-500 text-xs py-12">بانتظار أن يبدأ المقدم جولة عشوائية جديدة...</div>
                         )}
 
-                        {/* زر الكبس الذكي أسفل الشاشة لسهولة الوصول والمشاهدة */}
+                        {/* زر الكبس السفلي الضخم الفخم */}
                         <div className="flex justify-center pb-4">
                             {hasThreeErrors ? (
                                 <div className="w-44 h-44 rounded-full bg-red-950/80 border-4 border-red-700 flex flex-col items-center justify-center shadow-xl animate-pulse">
@@ -307,26 +320,27 @@
                 );
             }
 
-            // لوحة التحكم الأساسية وعرض الجمهور الكبرى الموحدة
+            // 3. شاشات العرض والتحكم الكبرى (المقدم والجمهور) مع إضافة أزرار الخروج وتصفير البيانات الميتة
             const renderMainDashboard = (isHostMode) => {
                 return (
                     <div className="p-4 md:p-6 min-h-screen flex flex-col justify-between max-w-[1600px] mx-auto">
-                        {/* بار الفريق والمجموعات العلوي لـ 8 فرق */}
+                        {/* بار البيانات العلوي والتحكم */}
                         <div className="panel-bg rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4 mb-4 shadow-xl">
                             <div className="flex items-center gap-3">
-                                <span className="bg-blue-600 text-white font-bold px-4 py-1.5 rounded-xl text-sm">{isHostMode ? 'لوحة التحكم للمقدم' : 'شاشة العرض العامة'}</span>
+                                <button onClick={logout} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-4 py-1.5 rounded-xl text-sm transition-all">🚪 خروج</button>
+                                <span className="bg-blue-600 text-white font-bold px-4 py-1.5 rounded-xl text-sm">{isHostMode ? 'لوحة المقدم' : 'شاشة الجمهور العامة'}</span>
                                 <span className="bg-amber-500/20 text-amber-400 font-bold px-4 py-1.5 rounded-xl text-sm border border-amber-500/30">الجولة {gameState.roundNumber}</span>
                             </div>
                             
                             <div className="flex items-center gap-2 flex-wrap max-w-3xl justify-center">
                                 {Object.keys(gameState.teams).map(tKey => {
                                     const isSelected = gameState.activeTeam === tKey;
-                                    const isBlocked = gameState.teams[tKey].errors >= 3;
+                                    const isBlocked = gameState.teams[tKey]?.errors >= 3;
                                     return (
                                         <div key={tKey} className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all flex items-center gap-1.5
                                             ${isSelected ? 'bg-emerald-600 border-emerald-400 scale-105 text-white' : isBlocked ? 'bg-red-950/40 border-red-900/60 text-red-400 opacity-50' : 'bg-[#1C2646] border-[#2A3B7C] text-slate-300'}`}>
-                                            <span>{gameState.teams[tKey].name}: {gameState.teams[tKey].score} ن</span>
-                                            {gameState.teams[tKey].errors > 0 && <span className="text-red-500 font-black">({ "X".repeat(gameState.teams[tKey].errors) })</span>}
+                                            <span>{gameState.teams[tKey]?.name || tKey}: {gameState.teams[tKey]?.score || 0} ن</span>
+                                            {(gameState.teams[tKey]?.errors || 0) > 0 && <span className="text-red-500 font-black">({ "X".repeat(gameState.teams[tKey].errors) })</span>}
                                         </div>
                                     );
                                 })}
@@ -334,19 +348,18 @@
                             <div className="font-bold text-amber-400 text-sm font-mono">الغرفة: <span className="text-white text-base">{room}</span></div>
                         </div>
 
-                        {/* لوحة التقسيم الجانبي والرئيسي */}
+                        {/* ساحة اللعبة الرئيسية والتحكم الجانبي */}
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start my-auto w-full">
                             
-                            {/* التحكم الجانبي */}
                             <div className="lg:col-span-3 flex flex-col gap-4 w-full">
                                 <div className="panel-bg rounded-2xl p-4 shadow-lg">
                                     <h4 className="text-xs font-bold text-slate-400 mb-2 uppercase tracking-wide">ترتيب الكبس والدور الحالي</h4>
                                     <div className="bg-[#0B132B] border border-blue-900/60 rounded-xl p-4 min-h-[90px] flex flex-col justify-center gap-2">
                                         {gameState.activeTeam ? (
                                             <div>
-                                                <p className="text-emerald-400 font-black text-sm">💡 الدور الحالي: {gameState.teams[gameState.activeTeam].name}</p>
+                                                <p className="text-emerald-400 font-black text-sm">💡 الدور الحالي: {gameState.teams[gameState.activeTeam]?.name}</p>
                                                 {gameState.buzzerQueue && gameState.buzzerQueue.length > 1 && (
-                                                    <p className="text-slate-400 text-[11px] mt-1">التالي بالانتظار: {gameState.buzzerQueue.slice(1).map(k => gameState.teams[k].name).join(' ← ')}</p>
+                                                    <p className="text-slate-400 text-[11px] mt-1">التالي بالانتظار: {gameState.buzzerQueue.slice(1).map(k => gameState.teams[k]?.name || k).join(' ← ')}</p>
                                                 )}
                                             </div>
                                         ) : (
@@ -375,11 +388,17 @@
                                                 </button>
                                             </div>
                                         )}
+
+                                        <div className="border-t border-red-900/40 pt-2 mt-2">
+                                            <button onClick={resetWholeRoomState} className="w-full bg-red-950/60 hover:bg-red-900/80 border border-red-800/80 text-red-200 p-2.5 rounded-xl font-bold text-xs transition-all">
+                                                🔄 إعادة تعيين وتصفير الغرفة بالكامل
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
                             </div>
 
-                            {/* البورد الرئيسي الفخم المنسق تنازلياً */}
+                            {/* البورد الرئيسي الفخم المنسق تنازلياً بنصوص عامية واضحة وممتعة */}
                             <div className="lg:col-span-9 w-full">
                                 {!gameState.roundActive ? (
                                     <div className="board-bg rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[450px]">
@@ -388,14 +407,14 @@
                                 ) : (
                                     <div className="board-bg rounded-3xl p-6 md:p-8 shadow-2xl relative">
                                         <div className="text-center mb-4">
-                                            <span className="bg-amber-500 text-slate-950 font-extrabold text-xs px-4 py-1 rounded-full uppercase tracking-wide ">{gameState.currentCategory}</span>
-                                            <p className="text-xs md:text-sm text-slate-400 mt-4 mb-2 font-medium">سألنا 100 شخص...</p>
+                                            <span className="bg-amber-500 text-slate-950 font-extrabold text-xs px-4 py-1 rounded-full uppercase tracking-wide">{gameState.currentCategory}</span>
+                                            <p className="text-xs md:text-sm text-slate-400 mt-4 mb-2 font-medium">سألنا 100 شخص والجواب بالعامية المتوقعة...</p>
                                             <h2 className="text-xl md:text-3xl font-black text-white px-4 leading-snug">{gameState.questionText}</h2>
                                         </div>
 
                                         <div className="flex justify-center gap-3 mb-6">
                                             {[1, 2, 3].map(i => {
-                                                const hasError = gameState.activeTeam && gameState.teams[gameState.activeTeam] && gameState.teams[gameState.activeTeam].errors >= i;
+                                                const hasError = gameState.activeTeam && gameState.teams?.[gameState.activeTeam] && gameState.teams[gameState.activeTeam].errors >= i;
                                                 return (
                                                     <div key={i} className={`w-10 h-10 md:w-11 md:h-11 rounded-xl flex items-center justify-center font-black text-lg border-2 transition-all shadow-md
                                                         ${hasError ? 'bg-red-600 border-red-400 text-white animate-bounce' : 'bg-[#0B132B] border-blue-900/60 text-slate-800'}`}>
@@ -407,7 +426,7 @@
 
                                         <div className="grid grid-cols-1 gap-3 max-w-3xl mx-auto w-full">
                                             {gameState.currentAnswers && gameState.currentAnswers.map((ans, idx) => {
-                                                const isRevealed = gameState.revealed[idx];
+                                                const isRevealed = gameState.revealed?.[idx];
                                                 return (
                                                     <div key={idx} onClick={() => isHostMode && clickRevealAnswer(idx, ans.points)}
                                                          className={`rounded-xl p-4 flex justify-between items-center h-16 transition-all shadow-md border text-sm md:text-base font-bold
