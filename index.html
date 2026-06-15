@@ -2,440 +2,81 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>سياق</title>
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet">
-
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <script type="importmap">
-      {
-        "imports": {
-          "firebase/app": "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js",
-          "firebase/database": "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js"
-        }
-      }
-    </script>
-    <style>
-        body, button, input, p, h1, h2, h3, span {
-            font-family: 'Tajawal', sans-serif !important;
-        }
-    </style>
 </head>
-<body class="m-0 p-0 min-h-screen select-none bg-[#0a0f18] text-[#e2e8f0]">
+<body class="bg-slate-950 text-white min-h-screen">
     <div id="root"></div>
-
     <script type="text/babel" data-type="module">
-        import { initializeApp } from "firebase/app";
-        import { getDatabase, ref, set, onValue, update } from "firebase/database";
-
-        const firebaseConfig = {
-            authDomain: "siyaq-rouyine.firebaseapp.com",
-            databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com",
-            projectId: "siyaq-rouyine",
-            storageBucket: "siyaq-rouyine.appspot.com"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app, "https://siyaq-rouyine-default-rtdb.firebaseio.com");
-
-        const { useState, useEffect, useRef } = React;
-
-        const TEAM_COLORS = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#a855f7'];
-        const CATEGORIES = ['عادات يومية', 'طبخ وأكلات', 'سيارات', 'سفر وسياحة', 'تقنية وجوالات', 'قهوة وشاهي'];
-
-        const QUESTIONS = [
-            { category: 'عادات يومية', text: 'أول شيء يفعله أغلب الناس بعد الاستيقاظ من النوم مباشرة', answers: [ { text: 'النظر في الجوال وتصفح الإشعارات', points: 45 }, { text: 'الذهاب للحمام وغسل الوجه', points: 25 }, { text: 'شرب ماء أو قهوة', points: 15 }, { text: 'إغلاق المنبه والنوم مجدداً', points: 10 }, { text: 'ترتيب السرير', points: 5 } ] },
-            { category: 'عادات يومية', text: 'أكثر شيء ينساه الناس عند الخروج السريع من البيت', answers: [ { text: 'مفاتيح البيت أو السيارة', points: 40 }, { text: 'الجوال أو الشاحن', points: 30 }, { text: 'المحفظة أو بطاقة الصراف', points: 15 }, { text: 'النظارة الشمسية', points: 10 }, { text: 'العطر', points: 5 } ] },
-            { category: 'عادات يومية', text: 'مكان يقضي فيه الناس أغلب وقتهم في الويكند', answers: [ { text: 'المقاهي والكافيهات', points: 35 }, { text: 'الاستراحات والشاليهات', points: 25 }, { text: 'المولات والمجمعات', points: 20 }, { text: 'البيت والنوم', points: 15 }, { text: 'الحدائق والبر', points: 5 } ] },
-            { category: 'عادات يومية', text: 'أكثر تطبيق يفتحه الشخص بمجرد ما يحس بالملل', answers: [ { text: 'تيك توك', points: 45 }, { text: 'إنستغرام', points: 25 }, { text: 'سناب شات', points: 15 }, { text: 'إكس', points: 10 }, { text: 'واتساب', points: 5 } ] },
-            { category: 'عادات يومية', text: 'أكثر سبب يجعل الناس يتأخرون عن الدوام أو المواعيد', answers: [ { text: 'زحمة السير والطرقات', points: 40 }, { text: 'عدم الاستيقاظ من النوم في الوقت', points: 30 }, { text: 'البحث عن المفاتيح أو الأغراض', points: 15 }, { text: 'تجهيز السيارة وتسخينها', points: 10 }, { text: 'تنسيق الملابس والتأخر في اللبس', points: 5 } ] },
-            { category: 'طبخ وأكلات', text: 'أشهر طبق رئيسي تجده في أغلب الولائم والمناسبات الرسمية', answers: [ { text: 'الأرز واللحم', points: 55 }, { text: 'المشويات المشكلة', points: 20 }, { text: 'المقبلات والسلطات', points: 12 }, { text: 'الجريش أو القرصان', points: 8 }, { text: 'الحلويات', points: 5 } ] },
-            { category: 'طبخ وأكلات', text: 'شيء لا يخلو منه أي مطبخ عربي مهما كانت الظروف', answers: [ { text: 'البصل والثوم', points: 35 }, { text: 'الأرز', points: 30 }, { text: 'الزيت', points: 15 }, { text: 'البهارات المشكلة', points: 13 }, { text: 'الطماطم والصلصة', points: 7 } ] },
-            { category: 'طبخ وأكلات', text: 'أكثر وجبة سريعة يطلبها الناس في أوقات آخر الليل', answers: [ { text: 'شاورما', points: 40 }, { text: 'برجر مع بطاطس', points: 25 }, { text: 'بروستد دجاج', points: 18 }, { text: 'فطائر أو بيتزا', points: 12 }, { text: 'إندومي أو نودلز', points: 5 } ] },
-            { category: 'سيارات', text: 'أكثر سبب يدفع الشخص لاستبدال أو بيع سيارته الحالية', answers: [ { text: 'كثرة الأعطال والمشاكل الميكانيكية', points: 42 }, { text: 'الرغبة في موديل أحدث وشكل جديد', points: 28 }, { text: 'اتساع العائلة والحاجة لسيارة أكبر', points: 15 }, { text: 'توفر السيولة أو عروض تقسيط قوية', points: 10 }, { text: 'استهلاك الوقود العالي في القديمة', points: 5 } ] },
-            { category: 'سيارات', text: 'أكثر لون سيارة منتشر وتشوفه بكل الشوارع بدون استثناء', answers: [ { text: 'أبيض', points: 50 }, { text: 'أسود', points: 20 }, { text: 'فضي أو رمادي', points: 15 }, { text: 'كحلي', points: 10 }, { text: 'لؤلؤي', points: 5 } ] },
-            { category: 'سفر وسياحة', text: 'أهم غرض يحرص المسافر على التأكد منه قبل التوجه للمطار', answers: [ { text: 'جواز السفر وتأشيرة الدخول', points: 50 }, { text: 'الجوال واللابتوب والشواحن', points: 22 }, { text: 'النقود وبطاقات الائتمان', points: 16 }, { text: 'تذاكر الطيران وحجز الفندق', points: 8 }, { text: 'الأدوية الشخصية المهمة', points: 4 } ] },
-            { category: 'تقنية وجوالات', text: 'أكثر مواصفة يركز عليها المشتري عند تصفح الجوالات الجديدة', answers: [ { text: 'أداء وجودة الكاميرات والتصوير', points: 38 }, { text: 'حجم وسعة البطارية وسرعة الشحن', points: 28 }, { text: 'السعر مقابل القيمة والمواصفات', points: 18 }, { text: 'حجم ذاكرة التخزين الداخلية', points: 11 }, { text: 'نوع الشاشة وسرعة التحديث', points: 5 } ] },
-            { category: 'قهوة وشاهي', text: 'أشهر أداة فلترة وتقطير تستخدم حالياً لإعداد القهوة المختصة السوداء', answers: [ { text: 'أداة V60', points: 55 }, { text: 'آلة الإسبريسو', points: 20 }, { text: 'أداة الكيمكس', points: 12 }, { text: 'أداة الفرنش بريس', points: 8 }, { text: 'الآيروبريس', points: 5 } ] }
+        // هنا تضع الـ 200 سؤال (سأزودك بها في الرد القادم)
+        const ALL_QUESTIONS = [
+            { text: "وش أكثر شيء تطلبه إذا دخلت كافيه وما تبي قهوة سوداء؟", answers: [{text:'سبانش لاتيه', points:45}, {text:'آيس لاتيه', points:25}, {text:'فلات وايت', points:15}, {text:'كراميل ماكياتو', points:10}, {text:'موكا', points:5}] }
         ];
 
-        function defaultState(roomCode) {
-          const teams = [];
-          for (let i = 0; i < 8; i++) {
-             teams.push({ id: i, name: `فريق ${i + 1}`, color: TEAM_COLORS[i], score: 0 });
-          }
-          return {
-            roomCode, phase: 'lobby', round: 1, maxRounds: 5,
-            teams: teams, players: [], currentQuestion: null, usedQuestions: [],
-            buzzedTeamId: -1, buzzedPlayerName: '', errors: 0, roundPoints: 0,
-            activeTeamTurn: null
-          };
-        }
-
         function App() {
-          const [roomCode, setRoomCode] = useState('');
-          const [role, setRole] = useState(null);
-          const [game, setGame] = useState(null);
-          const [myName, setMyName] = useState('');
-          const [myTeam, setMyTeam] = useState(0);
-          const [joined, setJoined] = useState(false);
-
-          const audioContextRef = useRef(null);
-
-          const playBuzzerSound = () => {
-             try {
-                if (!audioContextRef.current) {
-                   audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-                }
-                const ctx = audioContextRef.current;
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(440, ctx.currentTime); 
-                osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.3);
-                gain.gain.setValueAtTime(0.3, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start();
-                osc.stop(ctx.currentTime + 0.4);
-             } catch (e) {
-                console.log("Audio Error:", e);
-             }
-          };
-
-          useEffect(() => {
-            if (!roomCode) return;
-            const roomRef = ref(db, `rooms/${roomCode}`);
-            const unsubscribe = onValue(roomRef, (snap) => {
-              const val = snap.val();
-              if (val) {
-                 setGame(val);
-              }
-            });
-            return () => unsubscribe();
-          }, [roomCode]);
-
-          useEffect(() => {
-             if (game && game.buzzedTeamId !== undefined && game.buzzedTeamId !== null && game.buzzedTeamId !== -1) {
-                 playBuzzerSound();
-             }
-          }, [game?.buzzedTeamId, game?.buzzedPlayerName]);
-
-          const initRoom = async (chosenRole) => {
-            let code = roomCode.trim().toUpperCase();
-            if (chosenRole === 'host' && !code) {
-              code = Math.random().toString(36).slice(2, 6).toUpperCase();
-              await set(ref(db, `rooms/${code}`), defaultState(code));
-            }
-            setRoomCode(code);
-            setRole(chosenRole);
-          };
-
-          const joinAsPlayer = async () => {
-            if (!myName.trim()) return alert("يرجى كتابة الاسم الكريم!");
-            if (!game) return alert("الغرفة غير موجودة حالياً، تأكد من الرمز!");
+            const [currentQIndex, setCurrentQIndex] = React.useState(0);
+            const [buzzerLocked, setBuzzerLocked] = React.useState(false);
+            const [errors, setErrors] = React.useState(0);
+            const [revealed, setRevealed] = React.useState({});
             
-            const currentPlayers = game.players || [];
-            const teamPlayersCount = currentPlayers.filter(p => p.teamId === myTeam).length;
-            if (teamPlayersCount >= 4) {
-               return alert("هذا الفريق ممتلئ! (الحد الأقصى 4 لاعبين لكل فريق)");
-            }
+            const question = ALL_QUESTIONS[currentQIndex];
 
-            const newPlayer = { name: myName.trim(), teamId: myTeam };
-            const updatedPlayers = [...currentPlayers, newPlayer];
-            
-            await update(ref(db, `rooms/${roomCode}`), { players: updatedPlayers });
-            setJoined(true);
-          };
+            const toggleAnswer = (idx) => {
+                setRevealed(prev => ({ ...prev, [idx]: !prev[idx] }));
+            };
 
-          const selectQuestion = async (cat) => {
-            const pool = QUESTIONS.filter(q => q.category === cat && !(game.usedQuestions || []).includes(q.text));
-            if (!pool.length) return alert('انتهت جميع أسئلة هذا القسم ببنك المعلومات السحابي!');
-            const q = pool[Math.floor(Math.random() * pool.length)];
-            
-            await update(ref(db, `rooms/${roomCode}`), {
-              currentQuestion: { text: q.text, category: q.category, answers: q.answers.map(a => ({...a, revealed: false})) },
-              usedQuestions: [...(game.usedQuestions || []), q.text],
-              buzzedTeamId: -1, buzzedPlayerName: '', errors: 0, roundPoints: 0, activeTeamTurn: null
-            });
-          };
-
-          const triggerBuzzer = async () => {
-            if (game.buzzedTeamId !== -1) return; 
-            await update(ref(db, `rooms/${roomCode}`), {
-              buzzedTeamId: myTeam,
-              buzzedPlayerName: myName,
-              activeTeamTurn: myTeam
-            });
-          };
-
-          const revealAnswer = async (idx) => {
-            if (game.buzzedTeamId === -1) return alert("برجاء الكبس أولاً لتحديد الفريق المستحق!");
-            const ans = game.currentQuestion.answers[idx];
-            if (ans.revealed) return;
-            
-            const updatedAnswers = [...game.currentQuestion.answers];
-            updatedAnswers[idx].revealed = true;
-            
-            const updatedTeams = [...game.teams];
-            updatedTeams[game.buzzedTeamId].score += ans.points;
-            
-            await update(ref(db, `rooms/${roomCode}`), {
-              'currentQuestion/answers': updatedAnswers,
-              roundPoints: game.roundPoints + ans.points,
-              teams: updatedTeams
-            });
-          };
-
-          const addError = async () => {
-            if (game.buzzedTeamId === -1) return alert("لا يوجد فريق ممسك بالدور لاحتساب الخطأ عليه!");
-            if (game.errors >= 3) return alert("تم استهلاك الأخطاء الثلاثة للجولة!");
-            await update(ref(db, `rooms/${roomCode}`), { errors: game.errors + 1 });
-          };
-
-          const clearBuzzer = async () => {
-            await update(ref(db, `rooms/${roomCode}`), { buzzedTeamId: -1, buzzedPlayerName: '' });
-          };
-
-          const nextRound = async () => {
-             await update(ref(db, `rooms/${roomCode}`), {
-                round: game.round + 1,
-                currentQuestion: null,
-                roundPoints: 0,
-                errors: 0,
-                buzzedTeamId: -1,
-                buzzedPlayerName: ''
-             });
-          };
-
-          const canStartGame = () => {
-             return (game?.players || []).length > 0;
-          };
-
-          if (!role) {
             return (
-              <div class="flex flex-col items-center justify-center min-h-screen p-6 text-center">
-                <h1 class="text-6xl font-black mb-2 text-amber-400 tracking-wider">سياق</h1>
-                <p class="text-slate-400 mb-10 text-sm md:text-base font-medium tracking-wide">النسخة 4.2 A</p>
-                <div class="w-full max-w-md space-y-4 bg-slate-900/60 p-6 rounded-3xl border border-slate-800 backdrop-blur">
-                  <input value={roomCode} onChange={e => setRoomCode(e.target.value)} placeholder="أدخل رمز الغرفة" class="w-full p-4 bg-slate-950 border border-slate-800 rounded-2xl text-center text-amber-300 uppercase font-mono font-black text-2xl tracking-widest focus:border-amber-500 focus:outline-none transition-all"/>
-                  <button onClick={() => initRoom('host')} class="w-full p-4 bg-amber-500 text-slate-950 font-black rounded-2xl text-lg hover:bg-amber-400 transition-all transform active:scale-95 shadow-lg">دخول كمقدم اللعبة</button>
-                  <button onClick={() => initRoom('display')} class="w-full p-4 bg-slate-800 hover:bg-slate-700 font-bold rounded-2xl text-lg transition-all text-white">شاشة العرض الكبرى</button>
-                  <button onClick={() => initRoom('player')} class="w-full p-4 bg-cyan-600 hover:bg-cyan-500 font-bold rounded-2xl text-lg transition-all text-white shadow-lg">دخول كمتسابق</button>
-                </div>
-              </div>
-            );
-          }
-
-          if (role === 'player' && !joined) {
-            return (
-              <div class="flex flex-col items-center justify-center min-h-screen p-4">
-                <div class="bg-slate-900 p-6 rounded-3xl w-full max-w-lg border border-slate-800 shadow-2xl">
-                  <h2 class="text-2xl font-black mb-6 text-center text-amber-400">انضمام متسابق ({roomCode})</h2>
-                  <input value={myName} onChange={e => setMyName(e.target.value)} placeholder="ادخل الاسم" class="w-full p-4 bg-slate-950 rounded-xl mb-5 text-center text-white text-lg font-bold border border-slate-800 focus:border-cyan-500 focus:outline-none"/>
-                  
-                  <label class="block mb-3 text-sm font-semibold text-slate-400 text-right">اختر فريقك المخصص:</label>
-                  <div class="grid grid-cols-4 gap-2 mb-6">
-                     {TEAM_COLORS.map((color, i) => {
-                        const count = game ? (game.players || []).filter(p => p.teamId === i).length : 0;
-                        return (
-                          <button key={i} type="button" onClick={() => setMyTeam(i)} disabled={count >= 4} class="p-3 rounded-xl font-bold text-white transition-all text-xs flex flex-col items-center justify-center relative" style={{ backgroundColor: myTeam === i ? color : '#1e293b', border: `2px solid ${color}`, opacity: count >= 4 ? 0.3 : 1 }}>
-                             <span>فريق {i+1}</span>
-                             <span class="text-[10px] opacity-70">({count}/4)</span>
-                          </button>
-                        );
-                     })}
-                  </div>
-                  <button onClick={joinAsPlayer} class="w-full p-4 bg-emerald-500 text-slate-950 font-black rounded-2xl text-xl shadow-xl hover:bg-emerald-400 transition-all">تأكيد حجز مكان بالمنصة</button>
-                </div>
-              </div>
-            );
-          }
-
-          if (role === 'player' && joined) {
-            const myTeamData = game?.teams?.[myTeam];
-            const isBuzzedMe = game?.buzzedPlayerName === myName;
-            const isSomeoneBuzzed = game?.buzzedTeamId !== undefined && game?.buzzedTeamId !== null && game?.buzzedTeamId !== -1;
-            return (
-              <div class="flex flex-col items-center justify-center min-h-screen p-6 text-center transition-all duration-300" style={{ backgroundColor: isBuzzedMe ? myTeamData?.color : '#0a0f18' }}>
-                <div class="mb-6 bg-slate-900/80 p-3 px-6 rounded-full border border-slate-800 inline-block text-sm">
-                   المتسابق: <span class="font-bold text-amber-400">{myName}</span> | <span style={{ color: myTeamData?.color }} class="font-black">{myTeamData?.name}</span>
-                </div>
-
-                <div class="grid grid-cols-2 gap-4 max-w-sm w-full mb-6 text-xs bg-slate-900/60 p-3 rounded-xl border border-slate-800/80 mx-auto">
-                   <div class="text-right">نقاط فريقك: <span class="font-bold text-emerald-400 text-sm">{myTeamData?.score || 0}</span></div>
-                   <div class="text-left">الجولة: <span class="text-amber-400 font-bold text-sm">{game?.round || 1}</span></div>
-                </div>
-                
-                {game?.currentQuestion ? (
-                  <div class="w-full max-w-md space-y-8">
-                    <div class="bg-slate-900/90 p-5 rounded-2xl border border-slate-800 shadow-xl">
-                      <p class="text-xs text-slate-400 uppercase tracking-widest mb-1">الموضوع: {game.currentQuestion.category}</p>
-                      <p class="font-black text-xl text-white leading-relaxed">{game.currentQuestion.text}</p>
-                    </div>
+                <div class="p-6">
+                    <h1 class="text-amber-400 font-bold mb-6 text-center text-2xl">لوحة تحكم المقدم</h1>
                     
-                    <button onClick={triggerBuzzer} disabled={isSomeoneBuzzed} class={`w-72 h-72 rounded-full font-black text-3xl shadow-2xl border-[12px] transition-all flex flex-col items-center justify-center mx-auto cursor-pointer ${isSomeoneBuzzed ? 'bg-slate-800 border-slate-700 text-slate-500 scale-95 shadow-none cursor-not-allowed' : 'bg-red-600 border-red-500 hover:bg-red-500 active:scale-90 text-white'}`}>
-                      <span>{isSomeoneBuzzed ? 'مقفول' : 'اكبس'}</span>
-                      {isSomeoneBuzzed && <span class="text-xs font-normal mt-2 text-slate-400">الحاجز: {game.buzzedPlayerName}</span>}
-                    </button>
-                  </div>
-                ) : (
-                  <div class="bg-slate-900/40 p-8 rounded-2xl border border-slate-800/60 max-w-xs mx-auto text-slate-400 font-medium">
-                     بانتظار اختيار تصنيف الجولة من المقدم
-                  </div>
-                )}
-              </div>
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* لوحة التحكم والأسئلة */}
+                        <div class="bg-slate-900 p-6 rounded-2xl">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-sm text-slate-400">التحكم في اللعبة</h2>
+                                <button 
+                                    onClick={() => setBuzzerLocked(!buzzerLocked)}
+                                    class={`px-4 py-2 rounded-lg font-bold ${buzzerLocked ? 'bg-red-600' : 'bg-emerald-600'}`}>
+                                    {buzzerLocked ? 'الكبس مقفل' : 'الكبس مفتوح'}
+                                </button>
+                            </div>
+
+                            {/* عداد الأخطاء */}
+                            <div class="flex gap-2 mb-6">
+                                {[1,2,3].map(i => (
+                                    <button key={i} onClick={() => setErrors(i)} class={`w-12 h-12 rounded-lg ${errors >= i ? 'bg-red-500' : 'bg-slate-700'}`}>X</button>
+                                ))}
+                            </div>
+
+                            {/* الإجابات المكشوفة للمقدم */}
+                            {question.answers.map((a, i) => (
+                                <div key={i} onClick={() => toggleAnswer(i)} class={`flex justify-between p-3 mb-2 rounded cursor-pointer ${revealed[i] ? 'bg-blue-600' : 'bg-slate-800'}`}>
+                                    <span>{a.text}</span>
+                                    <span class="font-bold">{a.points}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* شاشة العرض (المخفية عن المتسابقين) */}
+                        <div class="bg-slate-900 p-6 rounded-2xl border-2 border-amber-500">
+                            <p class="text-xs text-slate-400 mb-1">سألنا 100 شخص</p>
+                            <h3 class="text-xl font-bold mb-6">{question.text}</h3>
+                            <div class="space-y-3">
+                                {question.answers.map((a, i) => (
+                                    <div key={i} class="bg-slate-950 p-4 rounded-xl text-center border border-slate-700">
+                                        {revealed[i] ? `${a.text} (${a.points})` : '؟؟؟'}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             );
-          }
-
-          const activeBuzzed = game?.buzzedTeamId !== undefined && game?.buzzedTeamId !== null && game?.buzzedTeamId !== -1;
-
-          return (
-            <div class="p-3 md:p-6 max-w-7xl mx-auto text-right">
-              <div class="bg-slate-900 p-4 rounded-2xl flex flex-col md:flex-row justify-between items-center gap-4 mb-6 border border-slate-800 shadow-xl">
-                 <div class="text-lg font-semibold">رمز الغرفة: <span class="font-mono font-black text-amber-400 text-2xl tracking-wider">{roomCode}</span></div>
-                 
-                 <div class="flex flex-wrap gap-2 justify-center max-w-3xl">
-                    {game?.teams?.map((t) => {
-                       const hasPlayers = (game?.players || []).some(p => p.teamId === t.id);
-                       if (!hasPlayers && role === 'display') return null;
-                       return (
-                          <div key={t.id} class="p-2 px-3 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center gap-2 text-xs" style={{ borderRight: `4px solid ${t.color}` }}>
-                             <span class="font-bold text-white/90">{t.name}:</span>
-                             <span class="font-mono font-black text-emerald-400 text-sm">{t.score}ن</span>
-                          </div>
-                       );
-                    })}
-                 </div>
-
-                 <div class="flex items-center gap-3">
-                    <span class="bg-slate-950 text-amber-400 font-mono font-black px-4 py-1.5 rounded-xl border border-slate-800 text-sm">الجولة {game?.round || 1}</span>
-                    <span class="p-1.5 px-4 bg-slate-950 rounded-xl text-xs text-cyan-400 font-bold border border-slate-800">{role === 'host' ? 'لوحة المقدم' : 'شاشة العرض'}</span>
-                 </div>
-              </div>
-
-              {game?.phase === 'lobby' ? (
-                 <div class="bg-slate-900 p-8 rounded-3xl text-center border border-slate-800 shadow-2xl max-w-2xl mx-auto">
-                    <h2 class="text-3xl font-black mb-2 text-white">قاعة الانتظار</h2>
-                    <p class="mb-6 text-sm text-slate-400">الحد الأقصى 4 لاعبين لكل فريق</p>
-                    
-                    <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 mb-6 text-right space-y-2">
-                       <p class="text-xs text-slate-500 font-bold">قائمة الحضور:</p>
-                       {(game?.players || []).length === 0 ? (
-                          <p class="text-center text-slate-500 text-xs py-4">بانتظار المتسابقين</p>
-                       ) : (
-                          <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
-                             {game.players.map((p, idx) => (
-                                <div key={idx} class="p-2 bg-slate-900 rounded-lg text-xs font-bold border border-slate-800 flex items-center justify-between">
-                                   <span>{p.name}</span>
-                                   <span style={{ color: TEAM_COLORS[p.teamId] }}>فريق {p.teamId+1}</span>
-                                </div>
-                             ))}
-                          </div>
-                       )}
-                    </div>
-
-                    {role === 'host' && (
-                       <button onClick={() => update(ref(db, `rooms/${roomCode}`), { phase: 'playing' })} disabled={!canStartGame()} class={`w-full p-4 font-black rounded-xl text-xl shadow-xl transition-all ${canStartGame() ? 'bg-emerald-500 text-slate-950 hover:bg-emerald-400 cursor-pointer' : 'bg-slate-800 text-slate-500 cursor-not-allowed'}`}>بدء التنافس</button>
-                    )}
-                 </div>
-              ) : (
-                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div class="lg:col-span-2 space-y-6">
-                       <div class="bg-slate-900 p-6 md:p-8 rounded-3xl border border-slate-800 shadow-2xl relative text-center">
-                          {game?.currentQuestion ? (
-                             <div>
-                                <span class="bg-amber-400/10 text-amber-400 text-xs font-black px-4 py-1.5 rounded-full border border-amber-400/20">{game.currentQuestion.category}</span>
-                                <h2 class="text-2xl md:text-4xl font-black my-6 text-white leading-relaxed">{game.currentQuestion.text}</h2>
-                                
-                                <div class="bg-slate-950 p-4 px-10 rounded-2xl border border-slate-800 inline-block mb-6">
-                                   <div class="text-[10px] text-slate-500 font-bold mb-0.5">نقاط الإجابات الحالية</div>
-                                   <div class="text-4xl font-mono font-black text-emerald-400">+{game.roundPoints || 0}</div>
-                                </div>
-
-                                <div class="flex justify-center gap-4 mb-8">
-                                   {[1, 2, 3].map((num) => (
-                                      <div key={num} class={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-3xl border-2 transition-all ${game.errors >= num ? 'bg-red-600/20 border-red-500 text-red-500 scale-110 shadow-lg' : 'bg-slate-950 border-slate-800 text-slate-850'}`}>X</div>
-                                   ))}
-                               </div>
-
-                                <div class="space-y-3 max-w-2xl mx-auto text-right">
-                                   {game.currentQuestion.answers.map((ans, idx) => (
-                                      <div key={idx} onClick={() => role === 'host' && revealAnswer(idx)} class={`p-4 rounded-xl border-2 flex justify-between items-center transition-all ${ans.revealed ? 'bg-blue-950/40 border-blue-500 text-white font-black' : role === 'host' ? 'bg-slate-950 border-slate-800 text-slate-400 cursor-pointer hover:border-slate-600' : 'bg-slate-950 border-slate-900 text-transparent select-none'}`}>
-                                         <div class="flex items-center gap-4">
-                                            <span class="w-8 h-8 bg-slate-900 rounded-lg flex items-center justify-center text-sm font-mono font-bold text-slate-400 border border-slate-800">{idx + 1}</span>
-                                            <span class={`text-sm md:text-base ${ans.revealed || role === 'host' ? 'text-white' : 'hidden'}`}>{ans.text}</span>
-                                         </div>
-                                         <span class={`font-mono font-black text-amber-400 text-lg ${ans.revealed || role === 'host' ? 'visible' : 'hidden'}`}>+{ans.points}</span>
-                                      </div>
-                                   ))}
-                                </div>
-                             </div>
-                          ) : (
-                             <div class="text-center py-20 text-slate-500 text-lg font-medium">بانتظار اختيار تصنيف الجولة من لوحة التحكم</div>
-                          )}
-                       </div>
-                    </div>
-
-                    <div class="space-y-6 text-center">
-                       <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl">
-                          <h3 class="font-bold text-slate-400 mb-4 text-xs uppercase tracking-wider">حالة الكبس اللحظية</h3>
-                          {activeBuzzed ? (
-                             <div class="p-4 rounded-xl text-white font-black text-lg shadow-lg border" style={{ backgroundColor: TEAM_COLORS[game.buzzedTeamId], borderColor: TEAM_COLORS[game.buzzedTeamId] }}>
-                                <div class="text-[10px] bg-black/20 inline-block px-2 py-0.5 rounded mb-1 text-white/80 font-normal">أسرع كبسة معتمدة</div>
-                                <div class="truncate">اللاعب: {game?.buzzedPlayerName}</div>
-                                <div class="text-xs font-normal mt-1 text-white/90">(فريق {game.buzzedTeamId + 1})</div>
-                             </div>
-                          ) : (
-                             <div class="p-5 bg-slate-950 rounded-xl text-slate-500 border border-slate-800 text-xs font-medium">كبّاسات المتسابقين جاهزة لتلقي الإشارات...</div>
-                          )}
-                          
-                          {role === 'host' && activeBuzzed && (
-                             <button onClick={clearBuzzer} class="mt-4 w-full p-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl text-xs font-black text-white border border-slate-700 transition-all cursor-pointer">تصفير وتفعيل الكبس للجميع</button>
-                          )}
-                       </div>
-
-                       {role === 'host' && (
-                          <div class="bg-slate-900 p-5 rounded-2xl border border-slate-800 space-y-4 shadow-xl text-right">
-                             <h3 class="font-black text-amber-400 border-b border-slate-800 pb-3 text-xs uppercase tracking-wider">لوحة التحكم</h3>
-                             
-                             {!game?.currentQuestion ? (
-                                <div class="space-y-3">
-                                   <p class="text-xs text-slate-400 font-bold">اختر تصنيف الجولة:</p>
-                                   <div class="grid grid-cols-2 gap-2">
-                                      {CATEGORIES.map(cat => (
-                                         <button key={cat} onClick={() => selectQuestion(cat)} class="p-3 bg-slate-950 border border-slate-800 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all font-bold text-xs text-center text-white cursor-pointer">{cat}</button>
-                                      ))}
-                                   </div>
-                                </div>
-                             ) : (
-                                <div class="space-y-4">
-                                   <button onClick={addError} class="w-full p-4 bg-red-600/20 hover:bg-red-600/30 border-2 border-red-500 text-red-400 font-black rounded-xl text-xs transition-all flex items-center justify-center gap-2 cursor-pointer">احتساب خطأ على الفريق الكابس</button>
-                                   
-                                   <div class="border-t border-slate-800 pt-4 space-y-2">
-                                      <button onClick={nextRound} class="w-full p-4 bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black rounded-xl text-sm shadow-xl hover:brightness-110 transition-all cursor-pointer">إنهاء الجولة الحالية</button>
-                                   </div>
-                                </div>
-                             )}
-                          </div>
-                       )}
-                    </div>
-                 </div>
-              )}
-            </div>
-          );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
