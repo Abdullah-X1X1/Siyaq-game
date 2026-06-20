@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق الاحترافية - النسخة الشاملة A.7.0</title>
+    <title>لعبة سياق الاحترافية - النسخة العالمية A.8.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -19,9 +19,9 @@
         .panel-bg { background-color: #121B3D; border: 1px solid #1E2E69; }
         .board-bg { background-color: #0D1430; border: 1px solid #1E2E69; }
         .animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
-        .strike-anim { animation: strikeFlash 0.4s ease-in-out infinite alternate; }
+        .strike-anim { animation: strikeFlash 0.3s ease-in-out infinite alternate; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes strikeFlash { from { transform: scale(1); opacity: 1; } to { transform: scale(1.08); opacity: 0.9; } }
+        @keyframes strikeFlash { from { transform: scale(1); opacity: 1; } to { transform: scale(1.06); opacity: 0.9; } }
     </style>
 </head>
 <body class="min-h-screen select-none">
@@ -29,14 +29,14 @@
     <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen p-4 max-w-md mx-auto animate-fadeIn">
         <div class="text-center mb-6">
             <h1 class="text-6xl font-black text-[#F2C94C] tracking-wide">سياق</h1>
-            <p class="text-emerald-400 font-bold text-xs mt-1">النسخة الاحترافية الشاملة A.7.0</p>
+            <p class="text-amber-400 font-bold text-xs mt-1">النسخة النظامية المتكاملة A.8.0</p>
         </div>
         <div class="bg-[#1B2344]/80 border border-[#2B3A6F] rounded-[28px] p-6 w-full flex flex-col gap-3 shadow-2xl backdrop-blur-md">
             <input id="room-input" type="text" class="bg-[#2D1F55] border border-[#443182] rounded-2xl text-center font-bold text-lg h-14 w-full text-white outline-none placeholder-gray-500 uppercase" placeholder="أدخل رمز الغرفة">
             
             <button id="btn-host" class="bg-[#E28743] hover:bg-[#CD7432] font-extrabold text-white h-13 rounded-2xl transition-all active:scale-95 shadow-md">دخول كمقدم اللعبة (لوحة التحكم)</button>
             <button id="btn-display" class="bg-[#2F80ED] hover:bg-[#1B66D1] font-extrabold text-white h-13 rounded-2xl transition-all active:scale-95 shadow-md">شاشة العرض الكبرى (للجمهور)</button>
-            <button id="btn-player" class="bg-[#10B981] hover:bg-[#0D9668] font-extrabold text-white h-13 rounded-2xl transition-all active:scale-95 shadow-md">دخول كلاعب (زر الكابس المحمول)</button>
+            <button id="btn-player" class="bg-[#10B981] hover:bg-[#0D9668] font-extrabold text-white h-13 rounded-2xl transition-all active:scale-95 shadow-md">دخول كلاعب (شاشة الكابس والجدول)</button>
         </div>
         <div id="boot-error" class="hidden mt-4 bg-red-950/80 border border-red-500 rounded-xl p-4 text-sm text-red-300 w-full text-center"></div>
     </div>
@@ -49,11 +49,9 @@
         let currentRole = "";
         let playerTeam = ""; 
         let gameState = {};
-        
-        // ذاكرة لتتبع التغيرات وتشغيل الأصوات تلقائياً للجميع
         let localTracker = { queueLength: 0, strikes: 0, revealedCount: 0 };
 
-        // بنك الأسئلة الموسع والمتنوع (يحتوي على 5 إلى 8 إجابات مرتبة تنازلياً لكل فئة)
+        // بنك جولات غني وموسع يضم من 5 إلى 8 أطباق من الأجوبة لكل سؤال
         const CURATED_ROUNDS = [
             {
                 category: "الحياة اليومية",
@@ -80,7 +78,7 @@
             },
             {
                 category: "الرحلات والبر",
-                question: "أغراض مستحيل تنساها أو تتحرك السيارة بدونها وأنت طالع كشتة؟",
+                question: "أغراض مستحيل تنساها أو تتحرك السيارة بدونها وأنت طالع كشتة للبر؟",
                 answers: [
                     { text: "عزبة الشاهي والقهوة والتمريّة", points: 42 },
                     { text: "الحطب ووسائل إشعال النار الذكية", points: 23 },
@@ -92,7 +90,7 @@
             },
             {
                 category: "التسوق والمحلات",
-                question: "كلمة شهيرة دايم تسمعها من البائع لما تسأله عن السعر؟",
+                question: "كلمة شهيرة دايم تسمعها من البائع لما تسأله عن السعر في المحلات؟",
                 answers: [
                     { text: "هذا عليه خصم خاص عشانك بس اليوم", points: 38 },
                     { text: "والله هذا أصلي مكفول وآخر حبة بالكرتون", points: 26 },
@@ -104,53 +102,59 @@
             }
         ];
 
+        // مصفوفة الـ 8 فرق الكاملة بتصميماتها الفاخرة المتباينة
         const TEAM_STYLES = {
             team1: { defaultName: "الفريق الأحمر", bg: "bg-red-600/20", border: "border-red-500", text: "text-red-400" },
             team2: { defaultName: "الفريق الأزرق", bg: "bg-blue-600/20", border: "border-blue-500", text: "text-blue-400" },
             team3: { defaultName: "الفريق الأخضر", bg: "bg-emerald-600/20", border: "border-emerald-500", text: "text-emerald-400" },
-            team4: { defaultName: "الفريق البنفسجي", bg: "bg-purple-600/20", border: "border-purple-500", text: "text-purple-400" }
+            team4: { defaultName: "الفريق البنفسجي", bg: "bg-purple-600/20", border: "border-purple-500", text: "text-purple-400" },
+            team5: { defaultName: "الفريق الأصفر", bg: "bg-amber-500/20", border: "border-amber-400", text: "text-amber-400" },
+            team6: { defaultName: "الفريق الوردي", bg: "bg-pink-600/20", border: "border-pink-400", text: "text-pink-400" },
+            team7: { defaultName: "الفريق السماوي", bg: "bg-cyan-600/20", border: "border-cyan-400", text: "text-cyan-400" },
+            team8: { defaultName: "الفريق البرتقالي", bg: "bg-orange-600/20", border: "border-orange-500", text: "text-orange-400" }
         };
 
-        // 🔊 محرك توليد الصوت الذكي المستقل (لا يعتمد على ملفات خارجية)
+        // 🔊 محرك هندسة الصوت الذكي الداخلي - تم رفع الشدة لتصبح مدوية
         function playSystemSound(type) {
             try {
                 const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 if (type === 'buzzer') {
                     let osc = ctx.createOscillator(); let gain = ctx.createGain();
-                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(480, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.35);
+                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(450, ctx.currentTime);
+                    gain.gain.setValueAtTime(0.4, ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
                     osc.connect(gain); gain.connect(ctx.destination);
-                    osc.start(); osc.stop(ctx.currentTime + 0.35);
+                    osc.start(); osc.stop(ctx.currentTime + 0.4);
                 } else if (type === 'error') {
-                    [0, 0.14].forEach(delay => {
+                    // صوت خطأ ضخم ومضاعف القوة لـ لوحة الـ X
+                    [0, 0.12].forEach(delay => {
                         let osc = ctx.createOscillator(); let gain = ctx.createGain();
-                        osc.type = 'triangle'; osc.frequency.setValueAtTime(120, ctx.currentTime + delay);
-                        gain.gain.setValueAtTime(0.3, ctx.currentTime + delay);
-                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + 0.15);
+                        osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, ctx.currentTime + delay);
+                        gain.gain.setValueAtTime(0.9, ctx.currentTime + delay); // رفع الصوت لأعلى درجة
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + 0.25);
                         osc.connect(gain); gain.connect(ctx.destination);
-                        osc.start(ctx.currentTime + delay); osc.stop(ctx.currentTime + delay + 0.15);
+                        osc.start(ctx.currentTime + delay); osc.stop(ctx.currentTime + delay + 0.25);
                     });
                 } else if (type === 'correct') {
                     [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
                         let osc = ctx.createOscillator(); let gain = ctx.createGain();
-                        osc.type = 'sine'; osc.frequency.setValueAtTime(freq, ctx.currentTime + (i * 0.06));
-                        gain.gain.setValueAtTime(0.15, ctx.currentTime + (i * 0.06));
-                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (i * 0.06) + 0.3);
+                        osc.type = 'sine'; osc.frequency.setValueAtTime(freq, ctx.currentTime + (i * 0.05));
+                        gain.gain.setValueAtTime(0.25, ctx.currentTime + (i * 0.05));
+                        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + (i * 0.05) + 0.35);
                         osc.connect(gain); gain.connect(ctx.destination);
-                        osc.start(ctx.currentTime + (i * 0.06)); osc.stop(ctx.currentTime + (i * 0.06) + 0.3);
+                        osc.start(ctx.currentTime + (i * 0.05)); osc.stop(ctx.currentTime + (i * 0.05) + 0.35);
                     });
                 }
-            } catch (e) { console.log("Audio contexts blocked or not supported", e); }
+            } catch (e) { console.log("Audio contexts blocked", e); }
         }
 
-        // تهيئة اتصال الفايربيز الأساسي الآمن
+        // تهيئة الفايربيز
         try {
             if (typeof firebase !== 'undefined') {
                 const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
                 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
                 db = firebase.database();
-            } else { showBootError("خطأ في تحميل مكاتب الشبكة الأساسية."); }
+            } else { showBootError("فشل في جلب مكاتب الفايربيز المباشرة."); }
         } catch (e) { showBootError("فشل النظام: " + e.message); }
 
         function showBootError(msg) {
@@ -175,7 +179,7 @@
                 if (data) {
                     gameState = data;
                     
-                    // 🎛️ المراقبة الحية لإطلاق المؤثرات الصوتية بشكل متزامن عند الجميع
+                    // تتبع وتزامن المؤثرات الصوتية عند الجميع حياً
                     const newQueueLength = (data.buzzerQueue || []).length;
                     if (newQueueLength > localTracker.queueLength) { playSystemSound('buzzer'); }
                     if (data.strikes > localTracker.strikes) { playSystemSound('error'); }
@@ -191,24 +195,33 @@
         }
 
         function initializeNewRoom() {
+            const defaultTeams = {};
+            Object.keys(TEAM_STYLES).forEach(tk => {
+                defaultTeams[tk] = { name: TEAM_STYLES[tk].defaultName, score: 0, roundScore: 0, wins: 0, playerCount: 0 };
+            });
+
             const defaultState = {
                 currentCategory: "انتظار الفئة",
                 questionText: "يرجى من المقدم اختيار الجولة والبدء بفتح الكابس للمتسابقين",
                 activeTeam: "", buzzerOpen: false, strikes: 0, showStrikeOverlay: false,
                 buzzerQueue: [], revealed: {},
-                teams: {
-                    team1: { name: "الفريق الأحمر", score: 0, wins: 0 },
-                    team2: { name: "الفريق الأزرق", score: 0, wins: 0 },
-                    team3: { name: "الفريق الأخضر", score: 0, wins: 0 },
-                    team4: { name: "الفريق البنفسجي", score: 0, wins: 0 }
-                },
+                teams: defaultTeams,
                 currentAnswers: CURATED_ROUNDS[0].answers
             };
             db.ref(`rooms/${currentRoom}`).set(defaultState);
         }
 
+        // دالة المساعدة لفحص وتصفية الفرق النشطة التي بها لاعب واحد على الأقل
+        function getActiveTeamsKeys() {
+            if (!gameState.teams) return [];
+            return Object.keys(TEAM_STYLES).filter(tk => gameState.teams[tk] && (gameState.teams[tk].playerCount || 0) > 0);
+        }
+
+        // الدالة الكبرى لرسم واجهات اللعبة بالكامل وبشكل ديناميكي مكثف
         function renderGame() {
             const container = document.getElementById("game-screen");
+            const activeKeys = getActiveTeamsKeys();
+
             const topBarHtml = `
                 <div class="max-w-6xl mx-auto flex justify-between items-center mb-4 pb-2 border-b border-blue-900/40">
                     <div class="flex items-center gap-2">
@@ -219,16 +232,41 @@
                 </div>
             `;
 
+            // كود رسم جدول الأسئلة المشترك (المستخدم في الجمهور واللاعبين)
+            const sharedGridHtml = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 text-right">
+                    ${(gameState.currentAnswers || []).map((ans, idx) => {
+                        const isRev = gameState.revealed && gameState.revealed[idx];
+                        if (isRev) {
+                            return `
+                                <div class="flex justify-between items-center h-14 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl border border-emerald-400/40 text-white font-black text-lg shadow-md animate-fadeIn">
+                                    <span class="truncate">${ans.text}</span>
+                                    <span class="bg-black/20 px-3 py-0.5 rounded-md text-sm">${ans.points}+</span>
+                                </div>
+                            `;
+                        } else {
+                            return `
+                                <div class="flex justify-between items-center h-14 px-5 bg-[#12193C] border border-[#22316B]/60 rounded-xl text-slate-600 font-bold text-lg">
+                                    <span class="bg-slate-800/50 w-7 h-7 rounded-full flex items-center justify-center text-xs text-slate-500 font-mono">${idx + 1}</span>
+                                    <span class="text-slate-700 tracking-widest text-xs">•••••••••••••••••••••</span>
+                                    <span class="bg-slate-900/40 px-2.5 py-0.5 rounded-md text-xs font-mono text-slate-700">؟</span>
+                                </div>
+                            `;
+                        }
+                    }).join('')}
+                </div>
+            `;
+
             if (currentRole === "host") {
-                // 1. لوحة تحكم مقدم اللعبة الاحترافية
+                // ==================== 1. واجهة المقدم الاحترافية ====================
                 container.innerHTML = `
                     ${topBarHtml}
                     <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-4">
                         <div class="flex flex-col gap-3">
                             <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
                                 <div class="flex justify-between items-center mb-1">
-                                    <h3 class="text-xs font-black text-yellow-400">🎯 الفئات المتاحة</h3>
-                                    <button onclick="pickRandomRound()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold">🔀 اختيار عشوائي</button>
+                                    <h3 class="text-xs font-black text-yellow-400">🎯 الفئات والأسئلة</h3>
+                                    <button onclick="pickRandomRound()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold">🔀 عشوائي</button>
                                 </div>
                                 ${CURATED_ROUNDS.map((r, i) => `
                                     <button onclick="changeRound(${i})" class="w-full text-right p-2 rounded-xl text-xs font-bold transition-all ${gameState.questionText === r.question ? 'bg-yellow-500 text-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}">
@@ -238,34 +276,36 @@
                             </div>
 
                             <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
-                                <h3 class="text-xs font-black text-gray-400">🚨 التحكم بالكابس والفرق</h3>
-                                <button onclick="toggleBuzzer()" class="w-full py-2.5 rounded-xl font-bold text-xs text-white ${gameState.buzzerOpen ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}">
+                                <h3 class="text-xs font-black text-gray-400">🚨 الكابس والفرق النشطة</h3>
+                                <button onclick="toggleBuzzer()" class="w-full py-2.5 rounded-xl font-black text-xs text-white ${gameState.buzzerOpen ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'}">
                                     ${gameState.buzzerOpen ? '🔴 قفل الكابس اللحظي' : '🟢 فتح الكابس للمتسايقين'}
                                 </button>
+                                
                                 <div class="grid grid-cols-2 gap-1.5 mt-1">
-                                    ${Object.keys(TEAM_STYLES).map(tk => `
-                                        <button onclick="setActiveTeam('${tk}')" class="p-2 text-center rounded-xl text-xs font-black border ${gameState.activeTeam === tk ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-slate-900 text-gray-400 border-slate-800'}">
-                                            ${gameState.teams?.[tk]?.name || TEAM_STYLES[tk].defaultName}
+                                    ${activeKeys.length === 0 ? '<p class="text-[11px] text-gray-500 text-center col-span-2 py-2">لا يوجد لاعبين متصلين حالياً</p>' : ''}
+                                    ${activeKeys.map(tk => `
+                                        <button onclick="setActiveTeam('${tk}')" class="p-2 text-center rounded-xl text-xs font-black border truncate ${gameState.activeTeam === tk ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-slate-900 text-gray-400 border-slate-800'}">
+                                            ${gameState.teams?.[tk]?.name}
                                         </button>
                                     `).join('')}
                                 </div>
-                                <div class="text-[11px] text-center text-slate-400 bg-black/30 p-2 rounded-xl">
-                                    طابور الكابس الحالي: <span class="text-yellow-400 font-bold">${(gameState.buzzerQueue || []).map(k => gameState.teams?.[k]?.name || k).join(' ← ') || 'فارغ'}</span>
+                                <div class="text-[10px] text-center text-slate-400 bg-black/30 p-2 rounded-xl">
+                                    الطابور: <span class="text-yellow-400 font-bold">${(gameState.buzzerQueue || []).map(k => gameState.teams?.[k]?.name || k).join(' ← ') || 'فارغ'}</span>
                                 </div>
                             </div>
 
                             <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
-                                <h3 class="text-xs font-black text-gray-400">❌ أخطاء المستحوذ الحالي</h3>
+                                <h3 class="text-xs font-black text-gray-400">❌ أخطاء المستحوذ</h3>
                                 <div class="flex gap-2 justify-center my-1 text-2xl">
                                     <span class="${gameState.strikes >= 1 ? 'text-red-500' : 'text-slate-700'}">❌</span>
                                     <span class="${gameState.strikes >= 2 ? 'text-red-500' : 'text-slate-700'}">❌</span>
                                     <span class="${gameState.strikes >= 3 ? 'text-red-500' : 'text-slate-700'}">❌</span>
                                 </div>
-                                <button onclick="triggerStrike()" class="bg-red-600/30 hover:bg-red-600 text-red-200 py-2 rounded-xl text-xs font-bold transition-all">إطلاق خطأ ونقله للتالي عند الثالث</button>
+                                <button onclick="triggerStrike()" class="bg-red-600 hover:bg-red-700 text-white py-2 rounded-xl text-xs font-black transition-all">خطأ</button>
                             </div>
 
                             <div class="panel-bg rounded-2xl p-3 flex flex-col gap-2">
-                                <button onclick="resetRoundOnly()" class="w-full bg-blue-900/40 hover:bg-blue-900/80 text-blue-300 border border-blue-700/60 py-2 rounded-xl text-xs font-black transition-all">🔄 تصفير الجولة الحالية فقط</button>
+                                <button onclick="resetRoundOnly()" class="w-full bg-blue-950 hover:bg-blue-900 text-blue-300 border border-blue-800 py-2 rounded-xl text-xs font-black transition-all">🔄 تصفير الجولة الحالية فقط</button>
                             </div>
                         </div>
 
@@ -274,7 +314,7 @@
                                 <div class="text-center mb-4">
                                     <span class="bg-[#E28743] text-white text-xs px-3 py-1 rounded-full font-black">${gameState.currentCategory}</span>
                                     <h2 class="text-xl font-black mt-2 text-white">${gameState.questionText}</h2>
-                                    <p class="text-[10px] text-gray-400 mt-1">💡 انقر على السطر كاملاً لكشف الإجابة واحتساب نقاطها تلقائياً للفريق المستحوذ</p>
+                                    <p class="text-[10px] text-gray-400 mt-1">💡 اضغط على السطر كاملاً لكشف الإجابة واحتساب نقاط الجولة تلقائياً</p>
                                 </div>
                                 <div class="flex flex-col gap-2">
                                     ${(gameState.currentAnswers || []).map((ans, idx) => {
@@ -296,26 +336,23 @@
                             </div>
 
                             <div class="panel-bg rounded-2xl p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                                ${Object.keys(TEAM_STYLES).map(tk => `
-                                    <div class="bg-black/20 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-2 relative">
-                                        <div onclick="renameTeam('${tk}')" class="text-xs font-black text-cyan-400 cursor-pointer hover:underline text-center truncate" title="اضغط لتغيير الاسم">
-                                            ✏️ ${gameState.teams?.[tk]?.name || TEAM_STYLES[tk].defaultName}
-                                        </div>
-                                        <div class="flex justify-between items-center px-1 bg-black/40 rounded-lg py-1">
-                                            <span class="text-[10px] text-gray-400 font-bold">النقاط:</span>
-                                            <span class="text-sm font-black text-white">${gameState.teams?.[tk]?.score || 0} ن</span>
+                                ${activeKeys.map(tk => `
+                                    <div class="bg-black/20 p-2.5 rounded-xl border border-slate-800 flex flex-col gap-2">
+                                        <div class="text-xs font-black text-cyan-400 text-center truncate">${gameState.teams?.[tk]?.name}</div>
+                                        <div class="text-[11px] bg-black/40 p-1 rounded text-center text-gray-300">
+                                            الرصيد: <span class="text-white font-bold">${(gameState.teams?.[tk]?.score || 0) + (gameState.teams?.[tk]?.roundScore || 0)} ن</span>
+                                            <br><span class="text-[9px] text-gray-500">(جولة: ${gameState.teams?.[tk]?.roundScore || 0})</span>
                                         </div>
                                         <div class="flex gap-1 justify-center">
-                                            <button onclick="modifyPoints('${tk}', 5)" class="bg-slate-800 hover:bg-slate-700 text-[10px] px-2 py-0.5 rounded font-bold">+5</button>
-                                            <button onclick="modifyPoints('${tk}', -5)" class="bg-slate-800 hover:bg-slate-700 text-[10px] px-2 py-0.5 rounded font-bold">-5</button>
+                                            <button onclick="modifyPoints('${tk}', 5)" class="bg-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">+5</button>
+                                            <button onclick="modifyPoints('${tk}', -5)" class="bg-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">-5</button>
                                         </div>
-                                        <div class="flex justify-between items-center px-1 bg-black/40 rounded-lg py-1 mt-1">
-                                            <span class="text-[10px] text-gray-400 font-bold">الجولات 🏆:</span>
-                                            <span class="text-sm font-black text-yellow-400">${gameState.teams?.[tk]?.wins || 0}</span>
+                                        <div class="text-[11px] bg-black/40 p-1 rounded text-center text-yellow-400 font-bold">
+                                            جولات 🏆: ${gameState.teams?.[tk]?.wins || 0}
                                         </div>
                                         <div class="flex gap-1 justify-center">
-                                            <button onclick="modifyWins('${tk}', 1)" class="bg-slate-800 hover:bg-slate-700 text-[10px] px-2 py-0.5 rounded font-bold">+1</button>
-                                            <button onclick="modifyWins('${tk}', -1)" class="bg-slate-800 hover:bg-slate-700 text-[10px] px-2 py-0.5 rounded font-bold">-1</button>
+                                            <button onclick="modifyWins('${tk}', 1)" class="bg-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">+1</button>
+                                            <button onclick="modifyWins('${tk}', -1)" class="bg-slate-800 text-[10px] px-2 py-0.5 rounded font-bold">-1</button>
                                         </div>
                                     </div>
                                 `).join('')}
@@ -324,26 +361,27 @@
                     </div>
                 `;
             } else if (currentRole === "display") {
-                // 2. واجهة شاشة العرض الكبرى (للجمهور)
+                // ==================== 2. واجهة الشاشة الكبرى (للجمهور) ====================
                 container.innerHTML = `
                     ${topBarHtml}
                     ${gameState.showStrikeOverlay ? `
                         <div class="fixed inset-0 bg-red-950/95 flex flex-col items-center justify-center z-50 strike-anim">
-                            <h1 class="text-[160px] md:text-[240px] font-black text-red-600">❌</h1>
+                            <h1 class="text-[180px] md:text-[250px] font-black text-red-600">❌</h1>
                             <p class="text-2xl md:text-4xl font-black text-white -mt-6">إجابة خـاطئـة!</p>
                         </div>
                     ` : ''}
 
                     <div class="max-w-5xl mx-auto flex flex-col gap-6 pt-2">
                         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            ${Object.keys(TEAM_STYLES).map(tk => {
+                            ${activeKeys.map(tk => {
                                 const isAct = gameState.activeTeam === tk;
                                 return `
-                                    <div class="${TEAM_STYLES[tk].bg} border ${isAct ? 'border-yellow-400 ring-2 ring-yellow-400/50' : TEAM_STYLES[tk].border} rounded-2xl p-3.5 text-center transition-all relative">
+                                    <div class="${TEAM_STYLES[tk].bg} border ${isAct ? 'border-yellow-400 ring-2 ring-yellow-400/50' : TEAM_STYLES[tk].border} rounded-2xl p-3.5 text-center transition-all relative animate-fadeIn">
                                         ${isAct ? '<span class="absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full">مستحوذ 🚨</span>' : ''}
-                                        <div class="text-xs ${TEAM_STYLES[tk].text} font-black truncate">${gameState.teams?.[tk]?.name || TEAM_STYLES[tk].defaultName}</div>
-                                        <div class="text-2xl font-black mt-1 text-white">${gameState.teams?.[tk]?.score || 0} <span class="text-xs text-gray-400">ن</span></div>
+                                        <div class="text-xs ${TEAM_STYLES[tk].text} font-black truncate">${gameState.teams?.[tk]?.name}</div>
+                                        <div class="text-2xl font-black mt-1 text-white">${(gameState.teams?.[tk]?.score || 0) + (gameState.teams?.[tk]?.roundScore || 0)} <span class="text-xs text-gray-400">ن</span></div>
                                         <div class="text-[10px] text-yellow-400 font-bold mt-1">الانتصارات: 🏆 ${gameState.teams?.[tk]?.wins || 0}</div>
+                                        <div class="text-[9px] text-gray-400 font-medium mt-0.5">اللاعبين: ${gameState.teams?.[tk]?.playerCount || 0} / 4</div>
                                     </div>
                                 `;
                             }).join('')}
@@ -359,73 +397,84 @@
                                     <span class="${gameState.strikes >= 3 ? 'text-red-500' : 'text-slate-800'}">❌</span>
                                 </div>
                             </div>
-
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 text-right">
-                                ${(gameState.currentAnswers || []).map((ans, idx) => {
-                                    const isRev = gameState.revealed && gameState.revealed[idx];
-                                    if (isRev) {
-                                        return `
-                                            <div class="flex justify-between items-center h-14 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl border border-emerald-400/40 text-white font-black text-lg shadow-md animate-fadeIn">
-                                                <span class="truncate">${ans.text}</span>
-                                                <span class="bg-black/20 px-3 py-0.5 rounded-md text-sm">${ans.points}+</span>
-                                            </div>
-                                        `;
-                                    } else {
-                                        return `
-                                            <div class="flex justify-between items-center h-14 px-5 bg-[#12193C] border border-[#22316B]/60 rounded-xl text-slate-600 font-bold text-lg">
-                                                <span class="bg-slate-800/50 w-7 h-7 rounded-full flex items-center justify-center text-xs text-slate-500 font-mono">${idx + 1}</span>
-                                                <span class="text-slate-700 tracking-widest text-xs">•••••••••••••••••••••</span>
-                                                <span class="bg-slate-900/40 px-2.5 py-0.5 rounded-md text-xs font-mono text-slate-700">؟</span>
-                                            </div>
-                                        `;
-                                    }
-                                }).join('')}
-                            </div>
+                            ${sharedGridHtml}
                         </div>
                     </div>
                 `;
             } else if (currentRole === "player") {
-                // 3. واجهة اللاعب المحمول (الكابس الكامل)
+                // ==================== 3. واجهة اللاعب المحدثة ====================
                 if (!playerTeam) {
+                    // شاشة دخول وانضمام واختيار وتسمية الفريق من 8 خيارات
                     container.innerHTML = `
                         ${topBarHtml}
-                        <div class="max-w-md mx-auto text-center p-4">
-                            <div class="panel-bg rounded-3xl p-6 flex flex-col gap-4">
-                                <h2 class="text-base font-black text-yellow-400">مرحباً بك في سياق 👋<br><span class="text-xs font-normal text-white">اختر فريقك لتفعيل الكابس الخاص بك:</span></h2>
-                                <div class="flex flex-col gap-2.5">
-                                    ${Object.keys(TEAM_STYLES).map(tk => `
-                                        <button onclick="selectPlayerTeam('${tk}')" class="w-full h-12 rounded-xl font-black text-white border text-xs transition-all ${TEAM_STYLES[tk].bg} ${TEAM_STYLES[tk].border}">
-                                            ${gameState.teams?.[tk]?.name || TEAM_STYLES[tk].defaultName}
-                                        </button>
-                                    `).join('')}
+                        <div class="max-w-xl mx-auto text-center p-2">
+                            <div class="panel-bg rounded-3xl p-5 flex flex-col gap-4">
+                                <h2 class="text-base font-black text-yellow-400">مرحباً بك في لوحة المتسابقين 👋<br><span class="text-xs font-normal text-white">اختر فريقاً واكتب الاسم المخصص لمتسارقيكم للانضمام (الحد الأقصى 4 لاعبين):</span></h2>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[60vh] overflow-y-auto p-1">
+                                    ${Object.keys(TEAM_STYLES).map(tk => {
+                                        const count = gameState.teams?.[tk]?.playerCount || 0;
+                                        const disabledAttr = count >= 4 ? 'disabled' : '';
+                                        return `
+                                            <div class="bg-black/30 p-3 rounded-2xl border border-slate-800 flex flex-col gap-2 text-right">
+                                                <div class="flex justify-between items-center text-xs">
+                                                    <span class="${TEAM_STYLES[tk].text} font-black">${gameState.teams?.[tk]?.name || TEAM_STYLES[tk].defaultName}</span>
+                                                    <span class="text-gray-400 font-bold font-mono">${count} / 4 لاعبين</span>
+                                                </div>
+                                                <input id="team-name-input-${tk}" type="text" class="bg-slate-900 border border-slate-700 rounded-xl px-2.5 h-9 text-xs outline-none focus:border-cyan-400" placeholder="تغيير اسم الفريق (اختياري)">
+                                                <button onclick="joinTeam('${tk}')" ${disabledAttr} class="w-full h-9 rounded-xl font-black text-xs text-white border transition-all ${count >= 4 ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 border-emerald-400 active:scale-95'}">
+                                                    ${count >= 4 ? 'الفريق ممتلئ 🔒' : 'انضمام للفريق الآن ↩'}
+                                                </button>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
                         </div>
                     `;
                 } else {
+                    // واجهة اللاعب النشط (تضم الكابس الكبير والجدول الحي الكامل)
                     const isMyTurn = gameState.activeTeam === playerTeam;
+                    const isDisabled = !gameState.buzzerOpen;
                     container.innerHTML = `
                         ${topBarHtml}
-                        <div class="max-w-md mx-auto text-center p-4 flex flex-col gap-4">
-                            <div class="panel-bg rounded-2xl p-3 flex justify-around text-center text-xs border border-blue-900/60">
-                                <div><div class="text-gray-400">نقاطكم</div><div class="text-lg font-black text-white">${gameState.teams?.[playerTeam]?.score || 0}</div></div>
-                                <div class="border-l border-slate-800"></div>
-                                <div><div class="text-gray-400">جولاتكم 🏆</div><div class="text-lg font-black text-yellow-400">${gameState.teams?.[playerTeam]?.wins || 0}</div></div>
-                                <div class="border-l border-slate-800"></div>
-                                <div><div class="text-gray-400">أخطاء الجولة</div><div class="text-lg font-black text-red-500">${isMyTurn ? (gameState.strikes || 0) : 0} / 3</div></div>
+                        <div class="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 p-2">
+                            <div class="flex flex-col gap-3">
+                                <div class="panel-bg rounded-2xl p-4 flex justify-around text-center text-xs border border-blue-900/60 shadow-lg">
+                                    <div><div class="text-gray-400 font-bold">نقاطكم الكلية</div><div class="text-lg font-black text-white">${(gameState.teams?.[playerTeam]?.score || 0) + (gameState.teams?.[playerTeam]?.roundScore || 0)}</div></div>
+                                    <div class="border-l border-slate-800"></div>
+                                    <div><div class="text-gray-400 font-bold">جولاتكم 🏆</div><div class="text-lg font-black text-yellow-400">${gameState.teams?.[playerTeam]?.wins || 0}</div></div>
+                                    <div class="border-l border-slate-800"></div>
+                                    <div><div class="text-gray-400 font-bold">أخطاء الجولة</div><div class="text-lg font-black text-red-500">${isMyTurn ? (gameState.strikes || 0) : 0} / 3</div></div>
+                                </div>
+
+                                <div class="panel-bg rounded-3xl p-5 flex flex-col items-center gap-4 shadow-xl">
+                                    <div class="text-xs font-bold text-gray-300">فريقك النشط: <span class="text-cyan-400 font-black">${gameState.teams?.[playerTeam]?.name}</span></div>
+                                    
+                                    <button id="master-buzzer" onclick="pressBuzzer()" 
+                                        ${isDisabled ? 'disabled' : ''}
+                                        class="w-44 h-44 rounded-full font-black text-xl border-4 text-white transition-all shadow-2xl flex items-center justify-center uppercase select-none active:scale-90
+                                        ${isDisabled ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 border-red-400 animate-pulse'}">
+                                        ${isDisabled ? 'مقفل 🔒' : 'اكـبـس 🚨'}
+                                    </button>
+                                    
+                                    <div class="w-full p-2.5 rounded-xl text-center text-xs font-bold ${isMyTurn ? 'bg-green-950 text-green-300 border border-green-800' : 'bg-slate-900 text-slate-400'}">
+                                        ${isMyTurn ? '🔊 دور فريقكم الحالي للإجابة! ركزوا.' : (gameState.activeTeam ? `المستحوذ الحالي: ${gameState.teams?.[gameState.activeTeam]?.name}` : 'بانتظار فتح الكابس من المقدم...')}
+                                    </div>
+                                </div>
                             </div>
 
-                            <div class="panel-bg rounded-3xl p-6 flex flex-col items-center gap-4">
-                                <div class="text-xs font-bold text-gray-300">الفريق: <span class="text-cyan-400 font-black">${gameState.teams?.[playerTeam]?.name}</span></div>
-                                <button id="master-buzzer" onclick="pressBuzzer()" 
-                                    disabled="${!gameState.buzzerOpen}"
-                                    class="w-48 h-48 rounded-full font-black text-xl border-4 text-white transition-all shadow-2xl flex items-center justify-center uppercase select-none active:scale-90
-                                    ${!gameState.buzzerOpen ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 border-red-400 animate-pulse'}">
-                                    ${!gameState.buzzerOpen ? 'مقفل 🔒' : 'اكـبـس 🚨'}
-                                </button>
-                                <div class="w-full p-2.5 rounded-xl text-xs font-bold ${isMyTurn ? 'bg-green-950 text-green-300 border border-green-800' : 'bg-slate-900 text-slate-400'}">
-                                    ${isMyTurn ? '🔊 دوركم للإجابة الآن! ركزوا.' : (gameState.activeTeam ? `المستحوذ الحالي: ${gameState.teams?.[gameState.activeTeam]?.name}` : 'بانتظار فتح الكابس من المقدم...')}
+                            <div class="lg:col-span-2 board-bg rounded-[28px] p-5 border border-blue-900/50 flex flex-col gap-4 shadow-2xl">
+                                <div class="text-center">
+                                    <span class="bg-yellow-500 text-black text-[10px] font-black px-3 py-0.5 rounded-full uppercase">${gameState.currentCategory}</span>
+                                    <h2 class="text-lg font-black mt-2 text-white leading-relaxed">${gameState.questionText}</h2>
+                                    <div class="flex justify-center gap-2 mt-1.5 text-sm">
+                                        <span class="${gameState.strikes >= 1 ? 'text-red-500' : 'text-slate-800'}">❌</span>
+                                        <span class="${gameState.strikes >= 2 ? 'text-red-500' : 'text-slate-800'}">❌</span>
+                                        <span class="${gameState.strikes >= 3 ? 'text-red-500' : 'text-slate-800'}">❌</span>
+                                    </div>
                                 </div>
+                                ${sharedGridHtml}
                             </div>
                         </div>
                     `;
@@ -433,13 +482,26 @@
             }
         }
 
-        // ================= وظائف التحكم التفاعلية الفولاذية =================
+        // ================= وظائف التحكم والأكشن بالفايربيز والـ Transactions =================
 
         function changeRound(index) {
-            const selected = CURATED_ROUNDS[index];
-            db.ref(`rooms/${currentRoom}`).update({
-                currentCategory: selected.category, questionText: selected.question, currentAnswers: selected.answers,
-                revealed: {}, strikes: 0, activeTeam: "", buzzerOpen: false, buzzerQueue: []
+            db.ref(`rooms/${currentRoom}`).transaction((currentData) => {
+                if (!currentData) return currentData;
+                // ترحيل وتقييد نقاط الجولة السابقة إلى الحساب الدائم عند الانتقال للجولة الجديدة
+                Object.keys(currentData.teams || {}).forEach(tk => {
+                    currentData.teams[tk].score = (currentData.teams[tk].score || 0) + (currentData.teams[tk].roundScore || 0);
+                    currentData.teams[tk].roundScore = 0;
+                });
+                const selected = CURATED_ROUNDS[index];
+                currentData.currentCategory = selected.category;
+                currentData.questionText = selected.question;
+                currentData.currentAnswers = selected.answers;
+                currentData.revealed = {};
+                currentData.strikes = 0;
+                currentData.activeTeam = "";
+                currentData.buzzerOpen = false;
+                currentData.buzzerQueue = [];
+                return currentData;
             });
         }
 
@@ -449,30 +511,41 @@
         }
 
         function resetRoundOnly() {
-            if(confirm("هل تريد بالتأكيد إعادة تصفير الإجابات والأخطاء لهذه الجولة فقط؟")) {
-                db.ref(`rooms/${currentRoom}`).update({
-                    revealed: {}, strikes: 0, activeTeam: "", buzzerQueue: [], buzzerOpen: false, showStrikeOverlay: false
+            if (confirm("هل تريد حذف نقاط الجولة الحالية وإخفاء إجابتها فقط دون مس رصيد الفرق الدائم؟")) {
+                db.ref(`rooms/${currentRoom}`).transaction((currentData) => {
+                    if (!currentData) return currentData;
+                    // تصفير نقاط الجولة فقط وإبقاء التراكمي سليم
+                    Object.keys(currentData.teams || {}).forEach(tk => {
+                        currentData.teams[tk].roundScore = 0;
+                    });
+                    currentData.revealed = {};
+                    currentData.strikes = 0;
+                    currentData.activeTeam = "";
+                    currentData.buzzerQueue = [];
+                    currentData.buzzerOpen = false;
+                    currentData.showStrikeOverlay = false;
+                    return currentData;
                 });
             }
         }
 
-        function renameTeam(teamKey) {
-            const currentName = gameState.teams?.[teamKey]?.name || TEAM_STYLES[teamKey].defaultName;
-            const newName = prompt(`أدخل الاسم الجديد لفريق (${currentName}):`, currentName);
-            if (newName && newName.trim() !== "") {
-                db.ref(`rooms/${currentRoom}/teams/${teamKey}/name`).set(newName.trim());
-            }
-        }
-
         function clickAnswerRow(idx) {
-            const isAlreadyRevealed = gameState.revealed && gameState.revealed[idx];
-            db.ref(`rooms/${currentRoom}/revealed/${idx}`).set(!isAlreadyRevealed);
+            db.ref(`rooms/${currentRoom}`).transaction((currentData) => {
+                if (!currentData) return currentData;
+                if (!currentData.revealed) currentData.revealed = {};
+                const isAlreadyRevealed = currentData.revealed[idx];
+                currentData.revealed[idx] = !isAlreadyRevealed;
 
-            if (!isAlreadyRevealed && gameState.activeTeam) {
-                const pointsToAdd = gameState.currentAnswers[idx].points;
-                const currentScore = gameState.teams?.[gameState.activeTeam]?.score || 0;
-                db.ref(`rooms/${currentRoom}/teams/${gameState.activeTeam}/score`).set(currentScore + pointsToAdd);
-            }
+                if (!isAlreadyRevealed && currentData.activeTeam) {
+                    const pts = currentData.currentAnswers[idx].points;
+                    currentData.teams[currentData.activeTeam].roundScore = (currentData.teams[currentData.activeTeam].roundScore || 0) + pts;
+                } else if (isAlreadyRevealed && currentData.activeTeam) {
+                    const pts = currentData.currentAnswers[idx].points;
+                    let currentRoundPoints = (currentData.teams[currentData.activeTeam].roundScore || 0) - pts;
+                    currentData.teams[currentData.activeTeam].roundScore = currentRoundPoints < 0 ? 0 : currentRoundPoints;
+                }
+                return currentData;
+            });
         }
 
         function toggleBuzzer() {
@@ -490,10 +563,10 @@
                 currentData.showStrikeOverlay = true;
                 
                 if (s >= 3) {
-                    s = 0; // تصفير عداد الخطأ للفريق القادم
+                    s = 0; 
                     if (currentData.buzzerQueue && currentData.buzzerQueue.length > 1) {
-                        currentData.buzzerQueue.shift(); // إخراج الفريق الحالي من الطابور
-                        currentData.activeTeam = currentData.buzzerQueue[0]; // نقل الاستحواذ تلقائياً للتالي بكفاءة
+                        currentData.buzzerQueue.shift(); 
+                        currentData.activeTeam = currentData.buzzerQueue[0]; // تمرير الدور آلياً للفريق التالي في الطابور
                     } else {
                         currentData.buzzerQueue = []; currentData.activeTeam = "";
                     }
@@ -516,8 +589,21 @@
             db.ref(`rooms/${currentRoom}/teams/${teamKey}/wins`).set(w);
         }
 
-        function selectPlayerTeam(teamKey) {
-            playerTeam = teamKey; renderGame();
+        function joinTeam(teamKey) {
+            const nameInput = document.getElementById(`team-name-input-${teamKey}`).value.trim();
+            db.ref(`rooms/${currentRoom}`).transaction((currentData) => {
+                if (!currentData) return currentData;
+                const currentCount = currentData.teams[teamKey].playerCount || 0;
+                if (currentCount >= 4) return; // قفل منع التخطي
+                
+                currentData.teams[teamKey].playerCount = currentCount + 1;
+                if (nameInput) { currentData.teams[teamKey].name = nameInput; }
+                return currentData;
+            }, (err, committed) => {
+                if (committed && !err) {
+                    playerTeam = teamKey; renderGame();
+                }
+            });
         }
 
         function pressBuzzer() {
@@ -535,7 +621,7 @@
         }
 
         function exitRoom() {
-            if(confirm("هل أنت متأكد من رغبتك في الخروج والعودة للقائمة؟")) { window.location.reload(); }
+            if (confirm("هل أنت متأكد من رغبتك في العودة للشاشة الرئيسية؟")) { window.location.reload(); }
         }
     </script>
 </body>
