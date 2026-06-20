@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق الاحترافية - النسخة العالمية A.8.0</title>
+    <title>لعبة سياق الاحترافية - النسخة العالمية A.9.0</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -22,6 +22,8 @@
         .strike-anim { animation: strikeFlash 0.3s ease-in-out infinite alternate; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes strikeFlash { from { transform: scale(1); opacity: 1; } to { transform: scale(1.06); opacity: 0.9; } }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #2B3A6F; border-radius: 8px; }
     </style>
 </head>
 <body class="min-h-screen select-none">
@@ -29,7 +31,7 @@
     <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen p-4 max-w-md mx-auto animate-fadeIn">
         <div class="text-center mb-6">
             <h1 class="text-6xl font-black text-[#F2C94C] tracking-wide">سياق</h1>
-            <p class="text-amber-400 font-bold text-xs mt-1">النسخة النظامية المتكاملة A.8.0</p>
+            <p class="text-amber-400 font-bold text-xs mt-1">النسخة النظامية المتكاملة A.9.0</p>
         </div>
         <div class="bg-[#1B2344]/80 border border-[#2B3A6F] rounded-[28px] p-6 w-full flex flex-col gap-3 shadow-2xl backdrop-blur-md">
             <input id="room-input" type="text" class="bg-[#2D1F55] border border-[#443182] rounded-2xl text-center font-bold text-lg h-14 w-full text-white outline-none placeholder-gray-500 uppercase" placeholder="أدخل رمز الغرفة">
@@ -51,56 +53,519 @@
         let gameState = {};
         let localTracker = { queueLength: 0, strikes: 0, revealedCount: 0 };
 
-        // بنك جولات غني وموسع يضم من 5 إلى 8 أطباق من الأجوبة لكل سؤال
+        /* ========================================================================
+           بنك أسئلة "سياق" — أسلوب سعودي عامي بحت — سألنا فيها روح الشارع السعودي
+           70 سؤال موزعين على 6 فئات. كل سؤال: فئة + نص + إجابات مرتبة (مجموع نقاطها 100)
+           كل سؤال له معرف فريد (id) يُستخدم لتتبع الأسئلة المستخدمة ومنع تكرارها
+           ======================================================================== */
         const CURATED_ROUNDS = [
-            {
-                category: "الحياة اليومية",
-                question: "وش أول شيء تسويه أول ما تفتح عينك وتصحى من النوم؟",
-                answers: [
-                    { text: "أقعد أدور الجوال تحت المخدة", points: 45 },
-                    { text: "أطفي المنبه وأرجع أنام خمس دقائق", points: 25 },
-                    { text: "أتثاوب وأتمغط بالفراش طويلاً", points: 15 },
-                    { text: "أروح أركض للحمام وأتوضأ", points: 10 },
-                    { text: "أقول أذكار الصباح والاستيقاظ", points: 5 }
-                ]
-            },
-            {
-                category: "المناسبات والأكل",
-                question: "شيء أساسي ومستحيل تغيب عن سفرة العشاء في العزايم السعودية؟",
-                answers: [
-                    { text: "الرز واللحم (المفطح أو الذبيحة)", points: 50 },
-                    { text: "اللبن والمشروبات الغازية الباردة", points: 22 },
-                    { text: "الجرجير والبصل والليمون شطة", points: 13 },
-                    { text: "السمبوسة والمقبلات الجانبية", points: 8 },
-                    { text: "الحلى وأطباق الفاكهة المشكلة", points: 5 },
-                    { text: "المناديل المعطرة ونقّاش الأسنان", points: 2 }
-                ]
-            },
-            {
-                category: "الرحلات والبر",
-                question: "أغراض مستحيل تنساها أو تتحرك السيارة بدونها وأنت طالع كشتة للبر؟",
-                answers: [
-                    { text: "عزبة الشاهي والقهوة والتمريّة", points: 42 },
-                    { text: "الحطب ووسائل إشعال النار الذكية", points: 23 },
-                    { text: "الفرش والزل والمساند والمراكي", points: 16 },
-                    { text: "جوالات مجهزة بخرائط النفود والـ GPS", points: 10 },
-                    { text: "الماء الصالح للشرب والطبخ", points: 6 },
-                    { text: "الذبيحة أو اللحم المبرد للشواء", points: 3 }
-                ]
-            },
-            {
-                category: "التسوق والمحلات",
-                question: "كلمة شهيرة دايم تسمعها من البائع لما تسأله عن السعر في المحلات؟",
-                answers: [
-                    { text: "هذا عليه خصم خاص عشانك بس اليوم", points: 38 },
-                    { text: "والله هذا أصلي مكفول وآخر حبة بالكرتون", points: 26 },
-                    { text: "ما نختلف إن شاء الله الصامل يبشر بالخير", points: 18 },
-                    { text: "السعر نهائي ومثبت بالكمبيوتر يا غالي", points: 10 },
-                    { text: "تكلفته عالية ومربحنا فيه بسيط جداً", points: 5 },
-                    { text: "تبيه كاش ولا تدفع تابي وتمارا؟", points: 3 }
-                ]
-            }
+
+        /* ============================ 1) عوايد وناس ============================ */
+        { id: "ow1", category: "عوايد وناس", question: "وش أول شي تسويه أول ما تصحى من النوم؟", answers: [
+          { text: "أمسك الجوال وأفتح السوشل ميديا", points: 38 },
+          { text: "أطفي المنبه وأرقد شوي زيادة", points: 24 },
+          { text: "أروح أتوضى وأصلي", points: 16 },
+          { text: "أتمطى وأتثاوب بالفراش", points: 12 },
+          { text: "أروح أسوي قهوة أو شاي", points: 10 }
+        ]},
+        { id: "ow2", category: "عوايد وناس", question: "وش أكثر شي يضيع وقتك في يومك؟", answers: [
+          { text: "السوشل ميديا والريلز", points: 40 },
+          { text: "الزحمة وأنا بالسيارة", points: 22 },
+          { text: "الانتظار في الطوابير", points: 15 },
+          { text: "المسلسلات والنتفلكس", points: 13 },
+          { text: "السوالف الجوال الطويلة", points: 10 }
+        ]},
+        { id: "ow3", category: "عوايد وناس", question: "أكثر عادة تسويها وانت زعلان؟", answers: [
+          { text: "أسكت وما أحب أحد يكلمني", points: 30 },
+          { text: "آكل شي حلو أو وجبة", points: 22 },
+          { text: "أطلع أمشي أو أسوق", points: 18 },
+          { text: "أكلم صديق وأفضفض", points: 16 },
+          { text: "أنام عشان أنسى", points: 14 }
+        ]},
+        { id: "ow4", category: "عوايد وناس", question: "وش أكثر شي يخليك تتأخر عن موعدك؟", answers: [
+          { text: "الزحمة بالشارع", points: 35 },
+          { text: "ما حسبت وقت التجهيز صح", points: 25 },
+          { text: "انشغلت بالجوال قبل الطلعة", points: 18 },
+          { text: "دورت موقف سيارة ما لقيت", points: 13 },
+          { text: "نسيت شي ورجعت أجيبه", points: 9 }
+        ]},
+        { id: "ow5", category: "عوايد وناس", question: "أكثر شي تسويه وانت قاعد بمجلس مع ناس ما تعرفهم زين؟", answers: [
+          { text: "أمسك جوالي وأتصفح", points: 32 },
+          { text: "أبتسم وأسكت أغلب الوقت", points: 24 },
+          { text: "أسولف عن الجو والأخبار العامة", points: 20 },
+          { text: "أدور أحد أعرفه بالمجلس", points: 14 },
+          { text: "أحاول أطلع بسرعة", points: 10 }
+        ]},
+        { id: "ow6", category: "عوايد وناس", question: "وش أكثر سبب يخليك تسهر لين وقت متأخر؟", answers: [
+          { text: "الجوال والسوشل ميديا", points: 36 },
+          { text: "مسلسل أو فيلم شدني", points: 22 },
+          { text: "ما يجيني نوم أصلاً", points: 19 },
+          { text: "شغل أو دراسة لازم أخلصها", points: 14 },
+          { text: "سوالف مع الأصحاب", points: 9 }
+        ]},
+        { id: "ow7", category: "عوايد وناس", question: "أكثر شي يضايقك من تصرفات بعض الناس بالأماكن العامة؟", answers: [
+          { text: "الكلام بصوت عالي بالجوال", points: 28 },
+          { text: "ما يحترمون الدور بالطابور", points: 24 },
+          { text: "يدخنون قدامك بدون استئذان", points: 18 },
+          { text: "يحدقون فيك بطريقة غريبة", points: 16 },
+          { text: "يوقفون السيارة بمكان خاطئ", points: 14 }
+        ]},
+        { id: "ow8", category: "عوايد وناس", question: "وش أول شي تسويه إذا حسيت إنك مريض؟", answers: [
+          { text: "أدور أعراضي بقوقل", points: 34 },
+          { text: "آخذ حبة بنادول وأنتظر", points: 26 },
+          { text: "أكلم أمي أو حد بالعيلة", points: 18 },
+          { text: "أحجز موعد بالمستشفى", points: 13 },
+          { text: "أنام وأقول بيمر", points: 9 }
+        ]},
+        { id: "ow9", category: "عوايد وناس", question: "أكثر شي يفرحك في يوم عادي؟", answers: [
+          { text: "أكل لذيذ أو شي أحبه", points: 26 },
+          { text: "رسالة أو مكالمة من شخص أحبه", points: 24 },
+          { text: "إنجاز شي كنت مأجله", points: 20 },
+          { text: "نوم كافي وارتحت", points: 16 },
+          { text: "طقس حلو ومزاج رايق", points: 14 }
+        ]},
+        { id: "ow10", category: "عوايد وناس", question: "وش أكثر شي يخليك تأجل مهمة لازم تسويها؟", answers: [
+          { text: "الكسل وما عندي مزاج", points: 35 },
+          { text: "أقول عندي وقت بكره", points: 24 },
+          { text: "ما أعرف أبدأ منين", points: 17 },
+          { text: "انشغلت بشي ثاني", points: 14 },
+          { text: "خايف أسويها غلط", points: 10 }
+        ]},
+        { id: "ow11", category: "عوايد وناس", question: "أكثر مكان تحب تروح له عشان ترتاح من ضغط الحياة؟", answers: [
+          { text: "البر أو البحر", points: 30 },
+          { text: "غرفتي وفراشي", points: 26 },
+          { text: "بيت أهلي", points: 18 },
+          { text: "مقهى هادي", points: 16 },
+          { text: "أروح أمشي بمكان مفتوح", points: 10 }
+        ]},
+        { id: "ow12", category: "عوايد وناس", question: "وش أكثر شي يخليك تحس بالملل في إجازتك؟", answers: [
+          { text: "ما عندي خطة وأضيع الوقت بالجوال", points: 32 },
+          { text: "كل أصحابي مشغولين", points: 24 },
+          { text: "نفس الروتين بس بدون شغل", points: 20 },
+          { text: "ما عندي فلوس أسوي شي", points: 14 },
+          { text: "الجو حر أو بارد وما يطلع", points: 10 }
+        ]},
+        { id: "ow13", category: "عوايد وناس", question: "وش أكثر شي يخليك تحس إن يومك كان زين؟", answers: [
+          { text: "خلصت شغلي أو مهامي كلها", points: 30 },
+          { text: "قعدة حلوة مع ناس أحبهم", points: 26 },
+          { text: "أكلت أكل لذيذ", points: 18 },
+          { text: "نمت قيلولة مريحة", points: 16 },
+          { text: "صار يوم هادي بدون مشاكل", points: 10 }
+        ]},
+
+        /* ============================ 2) بيت وعيلة ============================ */
+        { id: "be1", category: "بيت وعيلة", question: "وش أكثر شي تختلفون عليه بالعيلة وانتوا قاعدين؟", answers: [
+          { text: "وش بنطلب ولا نطبخ", points: 30 },
+          { text: "أي قناة أو شي نشوفه بالتلفزيون", points: 22 },
+          { text: "درجة المكيف", points: 20 },
+          { text: "متى نطلع ووين نروح", points: 16 },
+          { text: "صوت الجوال أو الألعاب", points: 12 }
+        ]},
+        { id: "be2", category: "بيت وعيلة", question: "أكثر غرفة بالبيت يصير فيها فوضى بسرعة؟", answers: [
+          { text: "غرفة الأطفال", points: 32 },
+          { text: "المطبخ", points: 26 },
+          { text: "الصالة الرئيسية", points: 20 },
+          { text: "غرفة النوم", points: 13 },
+          { text: "المغسلة", points: 9 }
+        ]},
+        { id: "be3", category: "بيت وعيلة", question: "وش أكثر شي يحرص عليه الوالدين في تربية أولادهم؟", answers: [
+          { text: "الصلاة والدين", points: 30 },
+          { text: "الأدب واحترام الكبار", points: 26 },
+          { text: "التفوق بالدراسة", points: 18 },
+          { text: "ما يكثرون بالجوال", points: 15 },
+          { text: "النظافة الشخصية", points: 11 }
+        ]},
+        { id: "be4", category: "بيت وعيلة", question: "أكثر شي ينسونه أهل البيت ويتذكرونه وقت الضيوف بس؟", answers: [
+          { text: "ترتيب الصالة والمجلس", points: 28 },
+          { text: "تعطير البيت", points: 24 },
+          { text: "ترتيب الأطباق والفناجيل", points: 20 },
+          { text: "تنظيف دورة المياه الضيوف", points: 18 },
+          { text: "إخفاء الفوضى بالغرف", points: 10 }
+        ]},
+        { id: "be5", category: "بيت وعيلة", question: "وش أكثر سبب يخلي اجتماع العيلة يطول؟", answers: [
+          { text: "السوالف والذكريات", points: 30 },
+          { text: "النقاش بمواضيع وناسة أو خلافات", points: 24 },
+          { text: "الأكل والشاي والقهوة", points: 22 },
+          { text: "صور وفيديوهات بالجوال", points: 14 },
+          { text: "أحد يبدأ يحكي قصة طويلة", points: 10 }
+        ]},
+        { id: "be6", category: "بيت وعيلة", question: "أكثر شي يضحك العيلة وقت التجمعات؟", answers: [
+          { text: "ذكريات الطفولة والمواقف القديمة", points: 32 },
+          { text: "تقليد أحد أفراد العيلة", points: 24 },
+          { text: "مقاطع مضحكة بالجوال", points: 19 },
+          { text: "مزح بين الإخوان", points: 15 },
+          { text: "كلام الأطفال البريء", points: 10 }
+        ]},
+        { id: "be7", category: "بيت وعيلة", question: "وش أكثر شي يحبه الأطفال الصغار بالبيت؟", answers: [
+          { text: "الجوال والألعاب الإلكترونية", points: 36 },
+          { text: "التلفزيون والكرتون", points: 24 },
+          { text: "اللعب مع إخوانهم", points: 18 },
+          { text: "الحلويات والشكولاته", points: 13 },
+          { text: "اللعب بالحديقة أو برا", points: 9 }
+        ]},
+        { id: "be8", category: "بيت وعيلة", question: "أكثر شي يسبب نقاش بين الإخوان بالبيت الواحد؟", answers: [
+          { text: "السيارة ومين يستخدمها", points: 28 },
+          { text: "الحمام ومين يدخل أول", points: 22 },
+          { text: "ريموت التلفزيون", points: 20 },
+          { text: "ترتيب الغرفة المشتركة", points: 17 },
+          { text: "صوت الموسيقى أو الألعاب", points: 13 }
+        ]},
+        { id: "be9", category: "بيت وعيلة", question: "وش أول شي يسويه أهل البيت قبل عيد أو مناسبة كبيرة؟", answers: [
+          { text: "تنظيف وترتيب البيت بالكامل", points: 34 },
+          { text: "شراء ملابس جديدة", points: 24 },
+          { text: "تجهيز الحلويات والمكسرات", points: 18 },
+          { text: "ترتيب جدول الزيارات", points: 14 },
+          { text: "تزيين البيت", points: 10 }
+        ]},
+        { id: "be10", category: "بيت وعيلة", question: "أكثر شي يفتقده الواحد لما يطلع من بيت أهله ويستقل؟", answers: [
+          { text: "أكل أمه", points: 36 },
+          { text: "الراحة وما عليه مسؤوليات", points: 24 },
+          { text: "وجود العيلة حواليه دايم", points: 20 },
+          { text: "نظافة وترتيب البيت تلقائي", points: 12 },
+          { text: "الأمان والطمأنينة", points: 8 }
+        ]},
+        { id: "be11", category: "بيت وعيلة", question: "وش أكثر شي يصير فيه نقاش بين الزوجين في أول سنة زواج؟", answers: [
+          { text: "ترتيب البيت ومين يسوي وش", points: 28 },
+          { text: "الميزانية والمصروف", points: 26 },
+          { text: "زيارات الأهل", points: 20 },
+          { text: "طريقة الطبخ والأكل", points: 16 },
+          { text: "وقت النوم والاستيقاظ", points: 10 }
+        ]},
+        { id: "be12", category: "بيت وعيلة", question: "وش أكثر شي يفرح الأم في بيتها؟", answers: [
+          { text: "أولادها يرجعون البيت أوقات محددة", points: 26 },
+          { text: "البيت نظيف ومرتب", points: 24 },
+          { text: "العيلة كلها مجتمعين سوا", points: 22 },
+          { text: "أولادها يساعدونها بالبيت", points: 18 },
+          { text: "أحد يمدح أكلها", points: 10 }
+        ]},
+
+        /* ============================ 3) أكل وطبخات ============================ */
+        { id: "at1", category: "أكل وطبخات", question: "وش الأكلة اللي مستحيل تغيب عن سفرة العزومة عند السعوديين؟", answers: [
+          { text: "كبسة أو مندي لحم أو دجاج", points: 42 },
+          { text: "سلطة وفتوش", points: 18 },
+          { text: "لبن ومشروبات باردة", points: 15 },
+          { text: "مرق أو إدام جانبي", points: 13 },
+          { text: "حلى أو فواكه بالأخير", points: 12 }
+        ]},
+        { id: "at2", category: "أكل وطبخات", question: "أكثر شي تطلبه لما تفتح تطبيق توصيل الأكل؟", answers: [
+          { text: "برجر أو وجبة سريعة", points: 32 },
+          { text: "بيتزا", points: 24 },
+          { text: "مشاوي أو شاورما", points: 20 },
+          { text: "قهوة أو مشروبات", points: 14 },
+          { text: "أكل آسيوي أو سوشي", points: 10 }
+        ]},
+        { id: "at3", category: "أكل وطبخات", question: "وش أكثر شي ينقصك بالمطبخ وانت تطبخ؟", answers: [
+          { text: "البصل", points: 26 },
+          { text: "الثوم", points: 22 },
+          { text: "البهارات والتوابل", points: 20 },
+          { text: "الطماط", points: 18 },
+          { text: "الأرز أو الخبز", points: 14 }
+        ]},
+        { id: "at4", category: "أكل وطبخات", question: "أكثر سبب يخرب عليك الأكل وانت تطبخ؟", answers: [
+          { text: "زيادة أو نقص الملح", points: 30 },
+          { text: "احترق الأكل ونسيته على النار", points: 26 },
+          { text: "نسيت مكون مهم", points: 18 },
+          { text: "ما ضبطت درجة الحرارة", points: 16 },
+          { text: "استعجلت بالطبخ", points: 10 }
+        ]},
+        { id: "at5", category: "أكل وطبخات", question: "وش أكثر أكلة فطور يحبها أغلب الناس؟", answers: [
+          { text: "بيض بأشكاله", points: 32 },
+          { text: "فول", points: 22 },
+          { text: "خبز وجبن أو لبنة", points: 20 },
+          { text: "كبدة أو لحم مفروم", points: 14 },
+          { text: "شوفان أو حبوب", points: 12 }
+        ]},
+        { id: "at6", category: "أكل وطبخات", question: "أكثر سبب يخليك تطلب أكل بدل ما تطبخ؟", answers: [
+          { text: "تعبان وما عندي وقت", points: 36 },
+          { text: "ودي أجرب شي جديد", points: 22 },
+          { text: "ما عندي مكونات بالبيت", points: 18 },
+          { text: "عندي ضيوف أو مناسبة", points: 14 },
+          { text: "كسلان بس", points: 10 }
+        ]},
+        { id: "at7", category: "أكل وطبخات", question: "وش أكثر مشروب يطلبه الناس وقت السهرة؟", answers: [
+          { text: "قهوة (إسبريسو أو لاتيه)", points: 34 },
+          { text: "شاهي كرك", points: 24 },
+          { text: "عصير طبيعي", points: 18 },
+          { text: "مشروبات غازية", points: 14 },
+          { text: "موهيتو أو مشروبات باردة", points: 10 }
+        ]},
+        { id: "at8", category: "أكل وطبخات", question: "أكثر حلى يطلبه الناس بالمناسبات؟", answers: [
+          { text: "تشيز كيك", points: 28 },
+          { text: "كنافة", points: 24 },
+          { text: "بسبوسة أو معمول", points: 20 },
+          { text: "كيك شوكولاته", points: 16 },
+          { text: "أم علي", points: 12 }
+        ]},
+        { id: "at9", category: "أكل وطبخات", question: "وش أول شي يلفت نظرك بمطعم جديد؟", answers: [
+          { text: "التقييمات بقوقل أو السوشل ميديا", points: 30 },
+          { text: "الأسعار", points: 24 },
+          { text: "الديكور والأجواء", points: 20 },
+          { text: "توصية من صديق", points: 16 },
+          { text: "صور الأكل بالمنيو", points: 10 }
+        ]},
+        { id: "at10", category: "أكل وطبخات", question: "أكثر شي يضايقك بالمطاعم؟", answers: [
+          { text: "التأخير بتجهيز الطلب", points: 30 },
+          { text: "الأسعار مرتفعة عن الكمية", points: 24 },
+          { text: "الخدمة سيئة", points: 20 },
+          { text: "الزحمة وصعوبة الحجز", points: 16 },
+          { text: "النظافة مو زينة", points: 10 }
+        ]},
+        { id: "at11", category: "أكل وطبخات", question: "وش أكثر أكلة تربطك بذكريات الطفولة؟", answers: [
+          { text: "أكل أمي أو جدتي البيتي", points: 38 },
+          { text: "أكل المدرسة أو المقصف", points: 22 },
+          { text: "حلويات ونكهات قديمة", points: 18 },
+          { text: "أكلة كانت تسوى بالمناسبات بس", points: 14 },
+          { text: "أكل من مطعم قديم اندثر", points: 8 }
+        ]},
+        { id: "at12", category: "أكل وطبخات", question: "وش أكثر شي يخليك تشتري قهوة برا بدل ما تسويها بالبيت؟", answers: [
+          { text: "النكهة والطعم أحلى", points: 30 },
+          { text: "أبغى أطلع وأغير جو", points: 24 },
+          { text: "ما عندي وقت أسويها", points: 22 },
+          { text: "أحب الديكور والأجواء بالمقهى", points: 14 },
+          { text: "أقابل صديق هناك", points: 10 }
+        ]},
+
+        /* ============================ 4) سوالف الشارع ============================ */
+        { id: "ss1", category: "سوالف الشارع", question: "أكثر شي يضايقك من تصرفات السواق بالشارع؟", answers: [
+          { text: "السواقة البطيئة بالمسار السريع", points: 32 },
+          { text: "ما يستخدمون الإشارة", points: 26 },
+          { text: "الزحمة وقت الذروة", points: 18 },
+          { text: "الوقوف الخاطئ ويسد الطريق", points: 14 },
+          { text: "استخدام الجوال وهو يسوق", points: 10 }
+        ]},
+        { id: "ss2", category: "سوالف الشارع", question: "وش أكثر سبب يخليك تتأخر بالطريق؟", answers: [
+          { text: "زحمة خانقة بدون سبب واضح", points: 30 },
+          { text: "حادث أو عطل سيارة بالطريق", points: 24 },
+          { text: "إشارات مرور كثيرة", points: 20 },
+          { text: "أعمال صيانة بالشارع", points: 16 },
+          { text: "ضاع عليك الطريق", points: 10 }
+        ]},
+        { id: "ss3", category: "سوالف الشارع", question: "أكثر شي يخليك تنزعج وانت بالطابور؟", answers: [
+          { text: "أحد يتخطى الدور", points: 30 },
+          { text: "بطء الموظف أو الخدمة", points: 26 },
+          { text: "الطابور طويل من البداية", points: 20 },
+          { text: "ناس تسولف بصوت عالي", points: 14 },
+          { text: "ما فيه مكان للجلوس", points: 10 }
+        ]},
+        { id: "ss4", category: "سوالف الشارع", question: "وش أكثر موقف محرج يصير للواحد قدام الناس؟", answers: [
+          { text: "ينسى اسم شخص يعرفه", points: 28 },
+          { text: "يتعثر أو يطيح قدام الكل", points: 24 },
+          { text: "يطلع صوت غريب بمكان هادي", points: 20 },
+          { text: "يرد على رسالة بمكان خطأ", points: 16 },
+          { text: "ينادي شخص باسم غلط", points: 12 }
+        ]},
+        { id: "ss5", category: "سوالف الشارع", question: "أكثر شي يخليك تثق بشخص تقابله لأول مرة؟", answers: [
+          { text: "طريقة كلامه واحترامه", points: 30 },
+          { text: "نظرة عينه وثقته بنفسه", points: 22 },
+          { text: "توصية من شخص تعرفه", points: 20 },
+          { text: "تصرفاته بالمواقف الصغيرة", points: 16 },
+          { text: "ابتسامته وطريقة ترحيبه", points: 12 }
+        ]},
+        { id: "ss6", category: "سوالف الشارع", question: "وش أكثر شي يخلي الواحد يحس بالحرج بمكان عام؟", answers: [
+          { text: "يطلع صوت جواله عالي بمكان هادي", points: 26 },
+          { text: "يلبس لبس غير مناسب للمكان", points: 24 },
+          { text: "يسولف بصوت عالي ويلتفت له الكل", points: 22 },
+          { text: "ينسى يدفع أو ما معه فلوس كافية", points: 16 },
+          { text: "يدخل مكان خطأ بالغلط", points: 12 }
+        ]},
+        { id: "ss7", category: "سوالف الشارع", question: "أكثر شي يخليك تساعد شخص غريب بالشارع؟", answers: [
+          { text: "تشوفه تايه ويسأل عن مكان", points: 28 },
+          { text: "سيارته متعطلة أو بانشر", points: 26 },
+          { text: "كبير بالسن ويحتاج مساعدة", points: 22 },
+          { text: "وقع منه شي وما انتبه", points: 14 },
+          { text: "طلب منك مساعدة مباشرة", points: 10 }
+        ]},
+        { id: "ss8", category: "سوالف الشارع", question: "وش أكثر شي يفرح المرور لما يشوفونه بالشارع؟", answers: [
+          { text: "الالتزام بحزام الأمان", points: 28 },
+          { text: "احترام الإشارات والسرعة", points: 26 },
+          { text: "ترك مسافة أمان كافية", points: 22 },
+          { text: "استخدام الإشارة عند التغيير", points: 14 },
+          { text: "عدم استخدام الجوال أثناء القيادة", points: 10 }
+        ]},
+        { id: "ss9", category: "سوالف الشارع", question: "أكثر شي يخلي الناس يتجمعون ويتفرجون بالشارع؟", answers: [
+          { text: "حادث مروري", points: 34 },
+          { text: "مشكلة أو مشاجرة بين أشخاص", points: 24 },
+          { text: "حيوان غريب أو موقف طريف", points: 18 },
+          { text: "فعالية أو احتفال مفاجئ", points: 14 },
+          { text: "سيارة فخمة أو نادرة", points: 10 }
+        ]},
+        { id: "ss10", category: "سوالف الشارع", question: "وش أكثر شي يخليك تحس إنك بمدينة غريبة عنك؟", answers: [
+          { text: "ما تعرف الطرق وتايه", points: 30 },
+          { text: "اللهجة أو طريقة الكلام مختلفة", points: 24 },
+          { text: "أسعار الأشياء مختلفة عن بلدك", points: 18 },
+          { text: "عادات الناس وتصرفاتهم", points: 16 },
+          { text: "نوعية الأكل والمطاعم", points: 12 }
+        ]},
+        { id: "ss11", category: "سوالف الشارع", question: "وش أكثر شي يخلي الواحد يحس إنه بمزاج زين وهو ماشي بالسوق؟", answers: [
+          { text: "يلقى عروض وتخفيضات", points: 28 },
+          { text: "الجو حلو ومناسب", points: 24 },
+          { text: "يشوف أصحاب أو معارف", points: 20 },
+          { text: "موسيقى أو أجواء حلوة بالمكان", points: 16 },
+          { text: "ما فيه زحمة وكله مرتاح", points: 12 }
+        ]},
+
+        /* ============================ 5) جوال ونت ============================ */
+        { id: "jn1", category: "جوال ونت", question: "وش أكثر تطبيق تفتحه أول ما تمسك جوالك؟", answers: [
+          { text: "واتساب", points: 38 },
+          { text: "انستقرام", points: 24 },
+          { text: "تيك توك", points: 18 },
+          { text: "سناب شات", points: 12 },
+          { text: "تويتر / إكس", points: 8 }
+        ]},
+        { id: "jn2", category: "جوال ونت", question: "أكثر شي يخليك تشتري جوال جديد؟", answers: [
+          { text: "البطارية ضعفت وصارت تفرغ بسرعة", points: 28 },
+          { text: "الكاميرا واتحسنت بالموديل الجديد", points: 24 },
+          { text: "الجوال صار بطيء", points: 22 },
+          { text: "التخزين ما يكفي", points: 16 },
+          { text: "بس ودي أغير الشكل", points: 10 }
+        ]},
+        { id: "jn3", category: "جوال ونت", question: "وش أكثر شي تسويه وانت بدون نت أو الواي فاي طايح؟", answers: [
+          { text: "أحاول أتصل وأشيك إذا الكل طايح", points: 30 },
+          { text: "أطفي وأشغل الراوتر", points: 26 },
+          { text: "أستخدم بيانات الجوال", points: 20 },
+          { text: "أحس بضياع وما أعرف أسوي وش", points: 14 },
+          { text: "أتصل بالشركة المزودة", points: 10 }
+        ]},
+        { id: "jn4", category: "جوال ونت", question: "أكثر شي يضايقك بالسوشل ميديا؟", answers: [
+          { text: "المقارنات وحياة الناس المزيفة", points: 28 },
+          { text: "الإعلانات الكثيرة", points: 24 },
+          { text: "الأخبار الكاذبة والشائعات", points: 20 },
+          { text: "التعليقات السلبية والمشاكل", points: 16 },
+          { text: "يضيع وقت كثير بدون فايدة", points: 12 }
+        ]},
+        { id: "jn5", category: "جوال ونت", question: "وش أكثر سبب يخليك تحذف تطبيق من جوالك؟", answers: [
+          { text: "ياخذ مساحة كبيرة بدون فايدة", points: 28 },
+          { text: "ما عاد أستخدمه", points: 26 },
+          { text: "إشعارات مزعجة كثيرة", points: 20 },
+          { text: "صار بطيء أو فيه مشاكل", points: 16 },
+          { text: "اكتشفت بديل أحسن منه", points: 10 }
+        ]},
+        { id: "jn6", category: "جوال ونت", question: "أكثر شي تشتريه أونلاين بشكل متكرر؟", answers: [
+          { text: "ملابس وأحذية", points: 28 },
+          { text: "أكل وتوصيل وجبات", points: 26 },
+          { text: "إلكترونيات وإكسسوارات جوال", points: 20 },
+          { text: "مستلزمات منزلية", points: 16 },
+          { text: "كتب أو مستلزمات هواية", points: 10 }
+        ]},
+        { id: "jn7", category: "جوال ونت", question: "وش أكثر شي يخليك تثق بمتجر إلكتروني جديد؟", answers: [
+          { text: "تقييمات وتعليقات المشترين", points: 30 },
+          { text: "سياسة الإرجاع والاستبدال", points: 24 },
+          { text: "اسم المتجر معروف ومشهور", points: 20 },
+          { text: "وسائل دفع آمنة وموثوقة", points: 16 },
+          { text: "توصية من صديق", points: 10 }
+        ]},
+        { id: "jn8", category: "جوال ونت", question: "أكثر شي يضيع بطارية جوالك بسرعة؟", answers: [
+          { text: "السوشل ميديا والفيديوهات", points: 32 },
+          { text: "سطوع الشاشة عالي", points: 24 },
+          { text: "الألعاب", points: 20 },
+          { text: "تطبيقات شغالة بالخلفية", points: 14 },
+          { text: "ضعف موقع الشبكة", points: 10 }
+        ]},
+        { id: "jn9", category: "جوال ونت", question: "وش أكثر شي تحب تتابعه بالسوشل ميديا؟", answers: [
+          { text: "محتوى كوميدي وترفيهي", points: 30 },
+          { text: "أخبار ورياضة", points: 22 },
+          { text: "طبخ وصفات", points: 18 },
+          { text: "موضة وستايل", points: 16 },
+          { text: "محتوى تعليمي وتطوير ذات", points: 14 }
+        ]},
+        { id: "jn10", category: "جوال ونت", question: "أكثر شي يخليك تثبت إشعار تطبيق معين شغال دايم؟", answers: [
+          { text: "واتساب عشان ما يفوتني رد", points: 36 },
+          { text: "البنك عشان أتابع حركاتي المالية", points: 24 },
+          { text: "تطبيق الشغل أو الإيميل", points: 18 },
+          { text: "تطبيقات التوصيل والطلبات", points: 12 },
+          { text: "الأخبار العاجلة", points: 10 }
+        ]},
+        { id: "jn11", category: "جوال ونت", question: "وش أكثر شي يخليك تضحك وانت بالسوشل ميديا؟", answers: [
+          { text: "فيديوهات وريلز كوميدية", points: 36 },
+          { text: "ميمز ونكت مكتوبة", points: 26 },
+          { text: "تعليقات الناس المضحكة", points: 18 },
+          { text: "مواقف غريبة أو فاشلة لناس", points: 12 },
+          { text: "حسابات كوميدية أتابعها", points: 8 }
+        ]},
+
+        /* ============================ 6) فلوس وتسوق ============================ */
+        { id: "ft1", category: "فلوس وتسوق", question: "وش أكثر شي يندم عليه الناس بعد ما يشترونه؟", answers: [
+          { text: "ملابس ما لبسوها أبد", points: 32 },
+          { text: "أجهزة إلكترونية ما استخدموها", points: 24 },
+          { text: "اشتركوا فيه بس عروض ولا احتاجوه", points: 20 },
+          { text: "أكل اشتروه وما أكلوه", points: 14 },
+          { text: "اشتراكات شهرية نسوا يلغونها", points: 10 }
+        ]},
+        { id: "ft2", category: "فلوس وتسوق", question: "أكثر جملة تسمعها من البائع وانت تفاصل بالسعر؟", answers: [
+          { text: "هذا آخر سعر ما ينزل أكثر", points: 30 },
+          { text: "هذا عليه خصم خاص لك بس اليوم", points: 24 },
+          { text: "السعر مثبت بالكمبيوتر", points: 20 },
+          { text: "والله ما نربح فيه شي", points: 16 },
+          { text: "تبيه كاش ولا تقسيط", points: 10 }
+        ]},
+        { id: "ft3", category: "فلوس وتسوق", question: "وش أكثر شي تنتبه له وانت تشتري شي جديد؟", answers: [
+          { text: "السعر مقارنة بالجودة", points: 32 },
+          { text: "التقييمات وتجارب الناس", points: 24 },
+          { text: "الضمان وخدمة ما بعد البيع", points: 18 },
+          { text: "الماركة والاسم التجاري", points: 14 },
+          { text: "الشكل والتصميم", points: 12 }
+        ]},
+        { id: "ft4", category: "فلوس وتسوق", question: "أكثر سبب يخليك تنتظر التخفيضات عشان تشتري؟", answers: [
+          { text: "توفير الفلوس", points: 36 },
+          { text: "أشتري أكثر من قطعة بنفس السعر", points: 22 },
+          { text: "أجرب ماركات ما كنت أقدر أشتريها", points: 18 },
+          { text: "كل سنة أسوي كذا بالعادة", points: 14 },
+          { text: "أصحابي يخبرونني عن العروض", points: 10 }
+        ]},
+        { id: "ft5", category: "فلوس وتسوق", question: "وش أول شي يخطر ببالك إذا زاد راتبك؟", answers: [
+          { text: "أدخر جزء منه", points: 28 },
+          { text: "أسدد ديون أو التزامات", points: 24 },
+          { text: "أشتري شي كنت أتمناه", points: 22 },
+          { text: "أسافر أو أسوي رحلة", points: 16 },
+          { text: "أساعد أهلي أو عيلتي", points: 10 }
+        ]},
+        { id: "ft6", category: "فلوس وتسوق", question: "أكثر شي يخليك تحس بالقلق المادي آخر الشهر؟", answers: [
+          { text: "فواتير وأقساط لازم تدفعها", points: 32 },
+          { text: "صرفت أكثر من اللازم", points: 26 },
+          { text: "الراتب ما يكفي لين آخر الشهر", points: 20 },
+          { text: "مصاريف مفاجئة طلعت", points: 14 },
+          { text: "ديون أو التزامات تراكمت", points: 8 }
+        ]},
+        { id: "ft7", category: "فلوس وتسوق", question: "وش أكثر مكان تحب تتسوق منه؟", answers: [
+          { text: "مولات كبيرة", points: 32 },
+          { text: "متاجر إلكترونية وأونلاين", points: 26 },
+          { text: "أسواق شعبية وتقليدية", points: 18 },
+          { text: "محلات صغيرة بالحي", points: 14 },
+          { text: "أوت ليت وتخفيضات", points: 10 }
+        ]},
+        { id: "ft8", category: "فلوس وتسوق", question: "أكثر شي تشوفه استثمار جيد لفلوسك؟", answers: [
+          { text: "العقار", points: 30 },
+          { text: "الذهب", points: 22 },
+          { text: "الأسهم والاستثمار بالسوق", points: 20 },
+          { text: "مشروع تجاري خاص", points: 16 },
+          { text: "تطوير نفسك ومهاراتك", points: 12 }
+        ]},
+        { id: "ft9", category: "فلوس وتسوق", question: "وش أكثر سبب يخليك ترجع منتج اشتريته؟", answers: [
+          { text: "ما طابق المواصفات أو الصور", points: 30 },
+          { text: "فيه عيب أو خربان", points: 26 },
+          { text: "المقاس أو الحجم غلط", points: 20 },
+          { text: "لقيت أرخص بمكان ثاني", points: 14 },
+          { text: "غيرت رأيي وما احتجته", points: 10 }
+        ]},
+        { id: "ft10", category: "فلوس وتسوق", question: "أكثر شي يخليك تفضل الدفع بالبطاقة بدل الكاش؟", answers: [
+          { text: "أسهل وأسرع بالدفع", points: 32 },
+          { text: "ما أحب أحمل فلوس كاش", points: 24 },
+          { text: "فيه عروض وكاش باك على البطاقة", points: 20 },
+          { text: "أقدر أتابع مصاريفي بسهولة", points: 14 },
+          { text: "أكثر أمان من ضياع الكاش", points: 10 }
+        ]},
+        { id: "ft11", category: "فلوس وتسوق", question: "وش أكثر شي يخليك تحس إنك دفعت زيادة عن قيمة الشي؟", answers: [
+          { text: "لقيته أرخص بمكان ثاني بعدين", points: 32 },
+          { text: "الجودة ما كانت تستاهل السعر", points: 26 },
+          { text: "كان فيه رسوم أو ضرائب إضافية ما توقعتها", points: 18 },
+          { text: "اشتريته بعجلة بدون مقارنة", points: 14 },
+          { text: "خصم انتهى بعد ما دفعت بيوم", points: 10 }
+        ]}
+
         ];
+
+        // قائمة الفئات (مستخرجة تلقائياً من بنك الأسئلة، بدون تكرار)
+        const ALL_CATEGORIES = [...new Set(CURATED_ROUNDS.map(r => r.category))];
 
         // مصفوفة الـ 8 فرق الكاملة بتصميماتها الفاخرة المتباينة
         const TEAM_STYLES = {
@@ -126,11 +591,10 @@
                     osc.connect(gain); gain.connect(ctx.destination);
                     osc.start(); osc.stop(ctx.currentTime + 0.4);
                 } else if (type === 'error') {
-                    // صوت خطأ ضخم ومضاعف القوة لـ لوحة الـ X
                     [0, 0.12].forEach(delay => {
                         let osc = ctx.createOscillator(); let gain = ctx.createGain();
                         osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, ctx.currentTime + delay);
-                        gain.gain.setValueAtTime(0.9, ctx.currentTime + delay); // رفع الصوت لأعلى درجة
+                        gain.gain.setValueAtTime(0.9, ctx.currentTime + delay);
                         gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + delay + 0.25);
                         osc.connect(gain); gain.connect(ctx.destination);
                         osc.start(ctx.currentTime + delay); osc.stop(ctx.currentTime + delay + 0.25);
@@ -179,7 +643,6 @@
                 if (data) {
                     gameState = data;
                     
-                    // تتبع وتزامن المؤثرات الصوتية عند الجميع حياً
                     const newQueueLength = (data.buzzerQueue || []).length;
                     if (newQueueLength > localTracker.queueLength) { playSystemSound('buzzer'); }
                     if (data.strikes > localTracker.strikes) { playSystemSound('error'); }
@@ -200,13 +663,16 @@
                 defaultTeams[tk] = { name: TEAM_STYLES[tk].defaultName, score: 0, roundScore: 0, wins: 0, playerCount: 0 };
             });
 
+            const firstQuestion = CURATED_ROUNDS[0];
             const defaultState = {
+                currentQuestionId: firstQuestion.id,
                 currentCategory: "انتظار الفئة",
-                questionText: "يرجى من المقدم اختيار الجولة والبدء بفتح الكابس للمتسابقين",
+                questionText: "يرجى من المقدم اختيار الفئة أو الضغط على عشوائي للبدء بفتح الكابس للمتسابقين",
                 activeTeam: "", buzzerOpen: false, strikes: 0, showStrikeOverlay: false,
                 buzzerQueue: [], revealed: {},
                 teams: defaultTeams,
-                currentAnswers: CURATED_ROUNDS[0].answers
+                currentAnswers: [],
+                usedQuestionIds: []   // تتبع الأسئلة المستخدمة سابقاً لمنع التكرار
             };
             db.ref(`rooms/${currentRoom}`).set(defaultState);
         }
@@ -215,6 +681,12 @@
         function getActiveTeamsKeys() {
             if (!gameState.teams) return [];
             return Object.keys(TEAM_STYLES).filter(tk => gameState.teams[tk] && (gameState.teams[tk].playerCount || 0) > 0);
+        }
+
+        // إرجاع الأسئلة المتاحة (غير المستخدمة) ضمن فئة معينة، أو كل الفئات إذا category=null
+        function getAvailableQuestions(category) {
+            const used = new Set(gameState.usedQuestionIds || []);
+            return CURATED_ROUNDS.filter(r => (!category || r.category === category) && !used.has(r.id));
         }
 
         // الدالة الكبرى لرسم واجهات اللعبة بالكامل وبشكل ديناميكي مكثف
@@ -259,6 +731,7 @@
 
             if (currentRole === "host") {
                 // ==================== 1. واجهة المقدم الاحترافية ====================
+                const usedCount = (gameState.usedQuestionIds || []).length;
                 container.innerHTML = `
                     ${topBarHtml}
                     <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-4">
@@ -266,13 +739,23 @@
                             <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
                                 <div class="flex justify-between items-center mb-1">
                                     <h3 class="text-xs font-black text-yellow-400">🎯 الفئات والأسئلة</h3>
-                                    <button onclick="pickRandomRound()" class="bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] px-2 py-0.5 rounded-md font-bold">🔀 عشوائي</button>
+                                    <span class="text-[10px] text-gray-500 font-mono">${usedCount} / ${CURATED_ROUNDS.length} مستخدمة</span>
                                 </div>
-                                ${CURATED_ROUNDS.map((r, i) => `
-                                    <button onclick="changeRound(${i})" class="w-full text-right p-2 rounded-xl text-xs font-bold transition-all ${gameState.questionText === r.question ? 'bg-yellow-500 text-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}">
-                                        📌 ${r.category}
-                                    </button>
-                                `).join('')}
+                                <button onclick="pickRandomRound(null)" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs px-2 py-2 rounded-xl font-black mb-1">🔀 اختر سؤال عشوائي (كل الفئات)</button>
+                                ${ALL_CATEGORIES.map(cat => {
+                                    const avail = getAvailableQuestions(cat).length;
+                                    const total = CURATED_ROUNDS.filter(r => r.category === cat).length;
+                                    const isCurrent = gameState.currentCategory === cat;
+                                    const disabled = avail === 0;
+                                    return `
+                                        <button onclick="${disabled ? '' : `pickRandomRound('${cat}')`}" ${disabled ? 'disabled' : ''}
+                                            class="w-full text-right p-2 rounded-xl text-xs font-bold transition-all flex justify-between items-center ${isCurrent ? 'bg-yellow-500 text-black' : (disabled ? 'bg-slate-900 text-slate-600 cursor-not-allowed' : 'bg-slate-800 hover:bg-slate-700 text-slate-200')}">
+                                            <span>📌 ${cat}</span>
+                                            <span class="font-mono text-[10px] opacity-70">${avail}/${total}</span>
+                                        </button>
+                                    `;
+                                }).join('')}
+                                ${usedCount >= CURATED_ROUNDS.length ? `<button onclick="resetUsedQuestions()" class="w-full bg-amber-700 hover:bg-amber-600 text-white text-[11px] px-2 py-1.5 rounded-xl font-bold mt-1">♻ كل الأسئلة استخدمت - إعادة تدوير البنك</button>` : ''}
                             </div>
 
                             <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
@@ -404,7 +887,6 @@
             } else if (currentRole === "player") {
                 // ==================== 3. واجهة اللاعب المحدثة ====================
                 if (!playerTeam) {
-                    // شاشة دخول وانضمام واختيار وتسمية الفريق من 8 خيارات
                     container.innerHTML = `
                         ${topBarHtml}
                         <div class="max-w-xl mx-auto text-center p-2">
@@ -433,7 +915,6 @@
                         </div>
                     `;
                 } else {
-                    // واجهة اللاعب النشط (تضم الكابس الكبير والجدول الحي الكامل)
                     const isMyTurn = gameState.activeTeam === playerTeam;
                     const isDisabled = !gameState.buzzerOpen;
                     container.innerHTML = `
@@ -484,15 +965,26 @@
 
         // ================= وظائف التحكم والأكشن بالفايربيز والـ Transactions =================
 
-        function changeRound(index) {
+        // اختيار سؤال عشوائي (ضمن فئة معينة أو من كل البنك) مع ضمان عدم تكرار الأسئلة المستخدمة سابقاً
+        function pickRandomRound(category) {
             db.ref(`rooms/${currentRoom}`).transaction((currentData) => {
                 if (!currentData) return currentData;
+
+                const used = new Set(currentData.usedQuestionIds || []);
+                let pool = CURATED_ROUNDS.filter(r => (!category || r.category === category) && !used.has(r.id));
+
+                // إذا ما فيه أسئلة متاحة بهذه الفئة، توقف بدون تغيير الحالة
+                if (pool.length === 0) return currentData;
+
+                const selected = pool[Math.floor(Math.random() * pool.length)];
+
                 // ترحيل وتقييد نقاط الجولة السابقة إلى الحساب الدائم عند الانتقال للجولة الجديدة
                 Object.keys(currentData.teams || {}).forEach(tk => {
                     currentData.teams[tk].score = (currentData.teams[tk].score || 0) + (currentData.teams[tk].roundScore || 0);
                     currentData.teams[tk].roundScore = 0;
                 });
-                const selected = CURATED_ROUNDS[index];
+
+                currentData.currentQuestionId = selected.id;
                 currentData.currentCategory = selected.category;
                 currentData.questionText = selected.question;
                 currentData.currentAnswers = selected.answers;
@@ -501,20 +993,24 @@
                 currentData.activeTeam = "";
                 currentData.buzzerOpen = false;
                 currentData.buzzerQueue = [];
+
+                if (!currentData.usedQuestionIds) currentData.usedQuestionIds = [];
+                currentData.usedQuestionIds.push(selected.id);
+
                 return currentData;
             });
         }
 
-        function pickRandomRound() {
-            const randIdx = Math.floor(Math.random() * CURATED_ROUNDS.length);
-            changeRound(randIdx);
+        // إعادة تدوير بنك الأسئلة بالكامل (تصفير قائمة المستخدم منها) بدون مس نقاط الفرق
+        function resetUsedQuestions() {
+            if (!confirm("هل تريد إعادة تدوير بنك الأسئلة بالكامل؟ بإمكان الأسئلة الظهور من جديد بعدها.")) return;
+            db.ref(`rooms/${currentRoom}/usedQuestionIds`).set([]);
         }
 
         function resetRoundOnly() {
             if (confirm("هل تريد حذف نقاط الجولة الحالية وإخفاء إجابتها فقط دون مس رصيد الفرق الدائم؟")) {
                 db.ref(`rooms/${currentRoom}`).transaction((currentData) => {
                     if (!currentData) return currentData;
-                    // تصفير نقاط الجولة فقط وإبقاء التراكمي سليم
                     Object.keys(currentData.teams || {}).forEach(tk => {
                         currentData.teams[tk].roundScore = 0;
                     });
@@ -566,7 +1062,7 @@
                     s = 0; 
                     if (currentData.buzzerQueue && currentData.buzzerQueue.length > 1) {
                         currentData.buzzerQueue.shift(); 
-                        currentData.activeTeam = currentData.buzzerQueue[0]; // تمرير الدور آلياً للفريق التالي في الطابور
+                        currentData.activeTeam = currentData.buzzerQueue[0];
                     } else {
                         currentData.buzzerQueue = []; currentData.activeTeam = "";
                     }
@@ -594,7 +1090,7 @@
             db.ref(`rooms/${currentRoom}`).transaction((currentData) => {
                 if (!currentData) return currentData;
                 const currentCount = currentData.teams[teamKey].playerCount || 0;
-                if (currentCount >= 4) return; // قفل منع التخطي
+                if (currentCount >= 4) return;
                 
                 currentData.teams[teamKey].playerCount = currentCount + 1;
                 if (nameInput) { currentData.teams[teamKey].name = nameInput; }
