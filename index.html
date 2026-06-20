@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق - النسخة الفولاذية المضمونة A.6.0</title>
+    <title>لعبة سياق الاحترافية - النسخة الفولاذية الكاملة</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -18,8 +18,10 @@
         }
         .panel-bg { background-color: #121B3D; border: 1px solid #1E2E69; }
         .board-bg { background-color: #0D1430; border: 1px solid #1E2E69; }
-        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
+        .strike-anim { animation: strikeFlash 0.5s ease-in-out infinite alternate; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes strikeFlash { from { transform: scale(1); opacity: 1; } to { transform: scale(1.1); opacity: 0.8; } }
     </style>
 </head>
 <body class="min-h-screen select-none">
@@ -27,36 +29,95 @@
     <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen p-4 max-w-md mx-auto animate-fadeIn">
         <div class="text-center mb-6">
             <h1 class="text-6xl font-black text-[#F2C94C] tracking-wide">سياق</h1>
-            <p class="text-emerald-400 font-bold text-sm mt-1">النسخة الفولاذية المضمونة A.6.0</p>
+            <p class="text-cyan-400 font-bold text-xs mt-1">النسخة الفولاذية الاحترافية المكتملة</p>
         </div>
         <div class="bg-[#1B2344]/80 border border-[#2B3A6F] rounded-[28px] p-6 w-full flex flex-col gap-3 shadow-2xl backdrop-blur-md">
             <input id="room-input" type="text" class="bg-[#2D1F55] border border-[#443182] rounded-2xl text-center font-bold text-lg h-14 w-full text-white outline-none placeholder-gray-500 uppercase" placeholder="أدخل رمز الغرفة">
-            <button id="btn-host" class="bg-[#E28743] hover:bg-[#CD7432] font-extrabold text-white h-14 rounded-2xl transition-all active:scale-95 shadow-md">دخول كمقدم اللعبة</button>
-            <button id="btn-display" class="bg-[#2F80ED] hover:bg-[#1B66D1] font-extrabold text-white h-14 rounded-2xl transition-all active:scale-95 shadow-md">شاشة العرض الكبرى</button>
+            
+            <button id="btn-host" class="bg-[#E28743] hover:bg-[#CD7432] font-extrabold text-white h-13 rounded-2xl transition-all active:scale-95 shadow-md">دخول كمقدم اللعبة (لوحة التحكم)</button>
+            <button id="btn-display" class="bg-[#2F80ED] hover:bg-[#1B66D1] font-extrabold text-white h-13 rounded-2xl transition-all active:scale-95 shadow-md">شاشة العرض الكبرى (للجمهور)</button>
+            <button id="btn-player" class="bg-[#10B981] hover:bg-[#0D9668] font-extrabold text-white h-13 rounded-2xl transition-all active:scale-95 shadow-md">دخول كلاعب (زر الكابس المحمول)</button>
         </div>
         <div id="boot-error" class="hidden mt-4 bg-red-950/80 border border-red-500 rounded-xl p-4 text-sm text-red-300 w-full text-center"></div>
     </div>
 
-    <div id="game-screen" class="hidden min-h-screen p-4 animate-fadeIn">
-        </div>
+    <div id="game-screen" class="hidden min-h-screen p-4 animate-fadeIn"></div>
 
     <script>
         let db = null;
         let currentRoom = "";
         let currentRole = "";
+        let playerTeam = ""; // خاصة بدور اللاعب فقط
         let gameState = {};
 
-        // تهيئة الفايربيز الآمنة بدون اعتمادات معقدة
+        // بنك الأسئلة والجولات الغني والموسع (من 5 إلى 8 إجابات لكل فئة)
+        const CURATED_ROUNDS = [
+            {
+                category: "الحياة اليومية",
+                question: "وش أول شيء تسويه أول ما تفتح عينك وتصحى من النوم؟",
+                answers: [
+                    { text: "أقعد أدور الجوال تحت المخدة", points: 45 },
+                    { text: "أطفي المنبه وأرجع أنام خمس دقائق", points: 25 },
+                    { text: "أتثاوب وأتمغط بالفراش طويلاً", points: 15 },
+                    { text: "أروح أركض للحمام وأتوضأ", points: 10 },
+                    { text: "أقول أذكار الصباح والاستيقاظ", points: 5 }
+                ]
+            },
+            {
+                category: "المناسبات والأكل",
+                question: "شيء أساسي ومستحيل تغيب عن سفرة العشاء في العزايم السعودية؟",
+                answers: [
+                    { text: "الرز واللحم (المفطح أو المندي)", points: 55 },
+                    { text: "اللبن والمشروبات الغازية الباردة", points: 20 },
+                    { text: "الجرجير والبصل والليمون", points: 12 },
+                    { text: "السمبوسة والمقبلات الجانبية", points: 8 },
+                    { text: "الحلى وأطباق الفاكهة المشكلة", points: 5 }
+                ]
+            },
+            {
+                category: "الرحلات والبر",
+                question: "أغراض مستحيل تنساها أو تتحرك السيارة بدونها وأنت طالع كشتة للبر؟",
+                answers: [
+                    { text: "عزبة الشاهي والقهوة والبيالات", points: 38 },
+                    { text: "الحطب ووسائل إشعال النار", points: 24 },
+                    { text: "الفرش والزل والمساند للجلوس", points: 18 },
+                    { text: "الماء الصالح للشرب والغسيل", points: 12 },
+                    { text: "الذبيحة أو لحم الشواء المبرد", points: 5 },
+                    { text: "كشافات الإضاءة والبطاريات الإضافية", points: 3 }
+                ]
+            },
+            {
+                category: "التسوق والمحلات",
+                question: "كلمة شهيرة دايم تسمعها من البائع أو صاحب المحل لما تسأله عن السعر؟",
+                answers: [
+                    { text: "هذا عليه خصم خاص عشانك بس", points: 40 },
+                    { text: "والله هذا أصلي وآخر حبة بالمحل", points: 25 },
+                    { text: "ما نختلف إن شاء الله، الصامل يبشر", points: 15 },
+                    { text: "كل شيء مكتوب عليه بالباركود يا غالي", points: 10 },
+                    { text: "كلفتها عالية علينا ومربحنا فيها بسيط", points: 7 },
+                    { text: "تبيه كاش ولا تدفع عن طريق تمارا؟", points: 3 }
+                ]
+            }
+        ];
+
+        const TEAM_DETAILS = {
+            team1: { name: "الفريق الأحمر", bg: "bg-red-600/20", border: "border-red-500", text: "text-red-400" },
+            team2: { name: "الفريق الأزرق", bg: "bg-blue-600/20", border: "border-blue-500", text: "text-blue-400" },
+            team3: { name: "الفريق الأخضر", bg: "bg-emerald-600/20", border: "border-emerald-500", text: "text-emerald-400" },
+            team4: { name: "الفريق البنفسجي", bg: "bg-purple-600/20", border: "border-purple-500", text: "text-purple-400" }
+        };
+
+        // تهيئة اتصال الفايربيز
         try {
             if (typeof firebase !== 'undefined') {
                 const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
                 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
                 db = firebase.database();
             } else {
-                showBootError("تعذر الاتصال بخوادم الفايربيز الأساسية. يرجى التحقق من اتصال الإنترنت.");
+                showBootError("تعذر تحميل سكريبتات الفايربيز، تحقق من الإنترنت.");
             }
         } catch (e) {
-            showBootError("خطأ في النظام الداخلي: " + e.message);
+            showBootError("خطأ تهيئة: " + e.message);
         }
 
         function showBootError(msg) {
@@ -65,36 +126,28 @@
             errDiv.classList.remove("hidden");
         }
 
-        // الاستماع لأزرار واجهة الدخول
+        // ربط أزرار الدخول الثلاثة
         document.getElementById("btn-host").addEventListener("click", () => handleLogin("host"));
         document.getElementById("btn-display").addEventListener("click", () => handleLogin("display"));
+        document.getElementById("btn-player").addEventListener("click", () => handleLogin("player"));
 
         function handleLogin(role) {
             const roomInput = document.getElementById("room-input").value.trim().toUpperCase();
-            if (!roomInput) {
-                alert("الرجاء إدخال رمز الغرفة أولاً");
-                return;
-            }
-            if (!db) {
-                alert("النظام غير متصل بقاعدة البيانات حالياً.");
-                return;
-            }
+            if (!roomInput) { alert("أدخل رمز الغرفة أولاً!"); return; }
+            if (!db) { alert("الشبكة غير متصلة!"); return; }
 
             currentRoom = roomInput;
             currentRole = role;
 
-            // إخفاء شاشة الدخول وإظهار شاشة اللعبة
             document.getElementById("login-screen").classList.add("hidden");
             document.getElementById("game-screen").classList.remove("hidden");
 
-            // بدء الاستماع الحي للتغيرات في الفايربيز
             db.ref(`rooms/${currentRoom}`).on('value', (snapshot) => {
                 const data = snapshot.val();
                 if (data) {
                     gameState = data;
                     renderGame();
                 } else {
-                    // إذا كانت الغرفة جديدة، نقوم بتهيئتها افتراضياً
                     initializeNewRoom();
                 }
             });
@@ -102,167 +155,314 @@
 
         function initializeNewRoom() {
             const defaultState = {
-                currentCategory: "انتظار",
-                questionText: "بانتظار اختيار تصنيف الجولة من لوحة التحكم",
+                currentCategory: "انتظار الفئة",
+                questionText: "يرجى من المقدم اختيار الجولة والبدء بفتح الكابس",
                 activeTeam: "",
-                buzzerOpen: true,
-                roundActive: false,
-                currentAnswers: [],
+                buzzerOpen: false,
+                strikes: 0,
+                showStrikeOverlay: false,
                 revealed: {},
                 teams: {
                     team1: { name: "الفريق الأحمر", score: 0 },
-                    team2: { name: "الفريق الأزرق", score: 0 }
-                }
+                    team2: { name: "الفريق الأزرق", score: 0 },
+                    team3: { name: "الفريق الأخضر", score: 0 },
+                    team4: { name: "الفريق البنفسجي", score: 0 }
+                },
+                currentAnswers: CURATED_ROUNDS[0].answers
             };
             db.ref(`rooms/${currentRoom}`).set(defaultState);
         }
 
-        // دالة الرسم الأساسية (Render) المعتمدة على الـ DOM النقي
+        // الدالة الأساسية لإعادة رسم واجهات اللعبة بالكامل تبعاً للدور المختار
         function renderGame() {
-            const gameScreen = document.getElementById("game-screen");
-            
+            const container = document.getElementById("game-screen");
+
+            // شريط علوي مشترك يحتوي على خيار الخروج ورمز الغرفة
+            const topBarHtml = `
+                <div class="max-w-6xl mx-auto flex justify-between items-center mb-4 pb-2 border-b border-blue-900/40">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl font-black text-yellow-400">سياق</span>
+                        <span class="bg-blue-950 text-blue-400 text-xs px-2.5 py-0.5 rounded-md font-mono">${currentRoom}</span>
+                    </div>
+                    <button onclick="exitRoom()" class="bg-red-950 hover:bg-red-900 text-red-400 border border-red-800/60 text-xs px-4 py-1.5 rounded-xl transition-all font-bold">خروج من الغرفة ↩</button>
+                </div>
+            `;
+
             if (currentRole === "host") {
-                // تصميم واجهة مقدم اللعبة
-                gameScreen.innerHTML = `
-                    <div class="max-w-5xl mx-auto flex flex-col gap-4">
-                        <div class="panel-bg rounded-2xl p-4 flex justify-between items-center shadow-md">
-                            <span class="text-yellow-400 font-black text-xl">لوحة التحكم والمراقبة</span>
-                            <span class="bg-blue-900/50 px-4 py-1 rounded-full text-xs border border-blue-700">الغرفة: ${currentRoom}</span>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="flex flex-col gap-3">
-                                <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
-                                    <h3 class="text-sm font-bold text-gray-400 mb-1">لوحة التحكم الذكية</h3>
-                                    <button onclick="triggerAction('toggleBuzzer')" class="w-full py-3 rounded-xl font-bold transition-all ${gameState.buzzerOpen ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white">
-                                        ${gameState.buzzerOpen ? '🔴 قفل الكابس اللحظي' : '🟢 فتح الكابس للمتسابقين'}
+                // 1. واجهة مقدم اللعبة الاحترافية
+                container.innerHTML = `
+                    ${topBarHtml}
+                    <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-4">
+                        <div class="flex flex-col gap-3">
+                            <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
+                                <h3 class="text-xs font-black text-yellow-400 mb-1">🎯 فئات الأسئلة المتاحة</h3>
+                                ${CURATED_ROUNDS.map((r, i) => `
+                                    <button onclick="changeRound(${i})" class="w-full text-right p-2.5 rounded-xl text-xs font-bold transition-all ${gameState.questionText === r.question ? 'bg-yellow-500 text-black' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}">
+                                        📌 ${r.category}
                                     </button>
-                                    <button onclick="triggerAction('resetBuzzer')" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold transition-all">🔄 تصفير وإعادة تفعيل الجولة</button>
+                                `).join('')}
+                            </div>
+
+                            <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
+                                <h3 class="text-xs font-black text-gray-400">🚨 التحكم بالكابس والفرق</h3>
+                                <button onclick="toggleBuzzer()" class="w-full py-2.5 rounded-xl font-bold text-xs text-white ${gameState.buzzerOpen ? 'bg-red-600' : 'bg-green-600'}">
+                                    ${gameState.buzzerOpen ? '🔴 قفل الكابس اللحظي' : '🟢 فتح الكابس للاعبين'}
+                                </button>
+                                <div class="grid grid-cols-2 gap-1.5 mt-1">
+                                    ${Object.keys(TEAM_DETAILS).map(tk => `
+                                        <button onclick="setActiveTeam('${tk}')" class="p-2 text-center rounded-xl text-xs font-black transition-all border ${gameState.activeTeam === tk ? 'bg-yellow-500 text-black border-yellow-400' : 'bg-slate-900 text-gray-400 border-slate-800'}">
+                                            ${TEAM_DETAILS[tk].name}
+                                        </button>
+                                    `).join('')}
                                 </div>
-                                
-                                <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
-                                    <h3 class="text-sm font-bold text-gray-400 mb-1">إضافة وإدارة النقاط</h3>
-                                    <button onclick="addPoints('team1', 10)" class="w-full bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-700 py-2 rounded-xl text-xs font-bold transition-all">+10 نقاط للأحمر</button>
-                                    <button onclick="addPoints('team2', 10)" class="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-700 py-2 rounded-xl text-xs font-bold transition-all">+10 نقاط للأزرق</button>
+                                <div class="text-center text-[11px] text-yellow-500 font-medium bg-black/30 p-1.5 rounded-lg mt-1">
+                                    الفريق المستحوذ حالياً: <br><span class="text-white font-black text-xs">${gameState.activeTeam ? TEAM_DETAILS[gameState.activeTeam].name : 'لا يوجد'}</span>
                                 </div>
                             </div>
 
-                            <div class="md:col-span-2 board-bg rounded-3xl p-6 shadow-xl flex flex-col gap-4">
-                                <div class="text-center">
-                                    <span class="bg-[#E28743] text-white text-xs px-3 py-1 rounded-full font-bold">${gameState.currentCategory || 'عام'}</span>
+                            <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
+                                <h3 class="text-xs font-black text-gray-400">❌ لوحة الأخطاء (Strikes)</h3>
+                                <div class="flex gap-1 justify-center my-1 text-xl">
+                                    <span class="${gameState.strikes >= 1 ? 'text-red-500' : 'text-slate-700'}">❌</span>
+                                    <span class="${gameState.strikes >= 2 ? 'text-red-500' : 'text-slate-700'}">❌</span>
+                                    <span class="${gameState.strikes >= 3 ? 'text-red-500' : 'text-slate-700'}">❌</span>
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button onclick="triggerStrike()" class="bg-red-600/30 hover:bg-red-600 text-red-200 py-1.5 rounded-xl text-xs font-bold transition-all">إضافة خطأ X</button>
+                                    <button onclick="resetStrikes()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 py-1.5 rounded-xl text-xs font-bold transition-all">تصفير X</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-3 flex flex-col gap-3">
+                            <div class="board-bg rounded-3xl p-5 shadow-xl">
+                                <div class="text-center mb-4">
+                                    <span class="bg-[#E28743] text-white text-xs px-3 py-1 rounded-full font-black">${gameState.currentCategory}</span>
                                     <h2 class="text-xl font-black mt-2 text-gray-100">${gameState.questionText}</h2>
+                                    <p class="text-[11px] text-gray-400 mt-1">💡 انقر على السطر كاملاً لكشف الإجابة واحتساب النقاط تلقائياً للفريق المستحوذ</p>
                                 </div>
 
-                                <div class="flex flex-col gap-2 mt-2">
-                                    ${renderHostAnswers()}
+                                <div class="flex flex-col gap-2">
+                                    ${gameState.currentAnswers.map((ans, idx) => {
+                                        const isRev = gameState.revealed && gameState.revealed[idx];
+                                        return `
+                                            <div onclick="clickAnswerRow(${idx})" class="flex justify-between items-center p-3.5 rounded-xl border cursor-pointer transition-all active:scale-[0.99] ${isRev ? 'bg-emerald-950/50 border-emerald-500 text-emerald-300' : 'bg-slate-900/80 border-slate-800 text-slate-400 hover:border-slate-700'}" style="direction: rtl;">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="bg-slate-800 text-slate-300 text-xs w-6 h-6 rounded-full flex items-center justify-center font-bold">${idx + 1}</span>
+                                                    <span class="font-extrabold text-sm">${ans.text}</span>
+                                                </div>
+                                                <div class="flex items-center gap-3">
+                                                    <span class="font-black text-sm text-yellow-400">${ans.points} ن</span>
+                                                    <span class="text-xs px-2.5 py-0.5 rounded-md ${isRev ? 'bg-emerald-800 text-white' : 'bg-slate-800 text-slate-500'}">${isRev ? 'مكشوفة ✓' : 'مخفية'}</span>
+                                                </div>
+                                            </div>
+                                        `;
+                                    }).join('')}
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                `;
-            } else {
-                // تصميم واجهة شاشة العرض الكبرى
-                gameScreen.innerHTML = `
-                    <div class="max-w-6xl mx-auto flex flex-col gap-6 pt-6">
-                        <div class="flex justify-center gap-8">
-                            <div class="bg-red-600/20 border border-red-500 rounded-2xl px-6 py-3 text-center min-w-[140px] shadow-lg">
-                                <div class="text-xs text-red-300 font-bold">الفريق الأحمر</div>
-                                <div class="text-3xl font-black mt-1 text-white">${gameState.teams?.team1?.score || 0} ن</div>
-                            </div>
-                            <div class="bg-blue-600/20 border border-blue-500 rounded-2xl px-6 py-3 text-center min-w-[140px] shadow-lg">
-                                <div class="text-xs text-blue-300 font-bold">الفريق الأزرق</div>
-                                <div class="text-3xl font-black mt-1 text-white">${gameState.teams?.team2?.score || 0} ن</div>
-                            </div>
-                        </div>
 
-                        <div class="board-bg rounded-[36px] p-8 max-w-4xl w-full mx-auto shadow-2xl border border-blue-900/60 flex flex-col gap-6 text-center">
-                            <div>
-                                <span class="bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest">${gameState.currentCategory || 'سياق'}</span>
-                                <h2 class="text-2xl md:text-3xl font-black mt-4 leading-relaxed text-white">${gameState.questionText}</h2>
-                            </div>
-
-                            <div class="grid grid-cols-1 gap-3 mt-4 max-w-2xl mx-auto w-full">
-                                ${renderDisplayAnswers()}
+                            <div class="panel-bg rounded-2xl p-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                                ${Object.keys(TEAM_DETAILS).map(tk => `
+                                    <div class="bg-black/20 p-2.5 rounded-xl border border-slate-800 text-center flex flex-col gap-1.5">
+                                        <span class="text-xs font-bold text-gray-300">${TEAM_DETAILS[tk].name}</span>
+                                        <span class="text-lg font-black text-white">${gameState.teams?.[tk]?.score || 0} ن</span>
+                                        <div class="flex gap-1 justify-center">
+                                            <button onclick="modifyPoints('${tk}', 5)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-2 py-0.5 rounded-md font-bold">+5</button>
+                                            <button onclick="modifyPoints('${tk}', -5)" class="bg-slate-800 hover:bg-slate-700 text-white text-xs px-2 py-0.5 rounded-md font-bold">-5</button>
+                                        </div>
+                                    </div>
+                                `).join('')}
                             </div>
                         </div>
                     </div>
                 `;
-            }
-        }
+            } else if (currentRole === "display") {
+                // 2. واجهة الشاشة الكبرى الاحترافية (للجمهور)
+                container.innerHTML = `
+                    ${topBarHtml}
+                    ${gameState.showStrikeOverlay ? `
+                        <div class="fixed inset-0 bg-red-950/95 flex flex-col items-center justify-center z-50 strike-anim">
+                            <h1 class="text-[160px] md:text-[240px] font-black text-red-600 tracking-tight">❌</h1>
+                            <p class="text-2xl md:text-4xl font-black text-white -mt-6">إجابة خـاطئـة!</p>
+                        </div>
+                    ` : ''}
 
-        // مساعد رندر الإجابات للمقدم للتحكم في الكشف
-        function renderHostAnswers() {
-            if (!gameState.currentAnswers || gameState.currentAnswers.length === 0) {
-                return `<p class="text-gray-500 text-sm py-4">لا توجد إجابات محملة حالياً في هذه الجولة.</p>`;
-            }
-            return gameState.currentAnswers.map((ans, idx) => {
-                const isRevealed = gameState.revealed && gameState.revealed[idx];
-                return `
-                    <div class="flex justify-between items-center p-3 rounded-xl border ${isRevealed ? 'bg-emerald-950/40 border-emerald-500 text-emerald-200' : 'bg-slate-900/60 border-slate-700 text-slate-400'}">
-                        <span class="text-sm font-bold">${idx + 1}. ${ans.text} (${ans.points} ن)</span>
-                        <button onclick="toggleAnswerReveal(${idx})" class="text-xs px-3 py-1 rounded-lg font-black transition-all ${isRevealed ? 'bg-red-900/60 text-red-200 hover:bg-red-900' : 'bg-emerald-600 text-white hover:bg-emerald-500'}">
-                            ${isRevealed ? 'إخفاء 👁️' : 'كشف 🔓'}
-                        </button>
+                    <div class="max-w-5xl mx-auto flex flex-col gap-6 pt-2">
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            ${Object.keys(TEAM_DETAILS).map(tk => {
+                                const isAct = gameState.activeTeam === tk;
+                                return `
+                                    <div class="${TEAM_DETAILS[tk].bg} border ${isAct ? 'border-yellow-400 ring-2 ring-yellow-400/50' : TEAM_DETAILS[tk].border} rounded-2xl p-3.5 text-center transition-all relative">
+                                        ${isAct ? '<span class="absolute -top-2.5 left-1/2 transform -translate-x-1/2 bg-yellow-400 text-black text-[9px] font-black px-2 py-0.5 rounded-full uppercase">مستحوذ 🚨</span>' : ''}
+                                        <div class="text-xs ${TEAM_DETAILS[tk].text} font-black">${TEAM_DETAILS[tk].name}</div>
+                                        <div class="text-3xl font-black mt-1 text-white">${gameState.teams?.[tk]?.score || 0} <span class="text-xs text-gray-400 font-bold">ن</span></div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+
+                        <div class="board-bg rounded-[32px] p-6 md:p-8 max-w-4xl w-full mx-auto shadow-2xl border border-blue-900/40 text-center flex flex-col gap-5">
+                            <div class="relative">
+                                <span class="bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-wider">${gameState.currentCategory}</span>
+                                <h2 class="text-2xl md:text-3xl font-black mt-3 leading-relaxed text-white max-w-3xl mx-auto">${gameState.questionText}</h2>
+                                
+                                <div class="flex justify-center gap-2 mt-2 text-lg">
+                                    <span class="${gameState.strikes >= 1 ? 'text-red-500' : 'text-slate-800'}">❌</span>
+                                    <span class="${gameState.strikes >= 2 ? 'text-red-500' : 'text-slate-800'}">❌</span>
+                                    <span class="${gameState.strikes >= 3 ? 'text-red-500' : 'text-slate-800'}">❌</span>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3.5 mt-2 text-right" style="direction: rtl;">
+                                ${gameState.currentAnswers.map((ans, idx) => {
+                                    const isRev = gameState.revealed && gameState.revealed[idx];
+                                    if (isRev) {
+                                        return `
+                                            <div class="flex justify-between items-center h-14 px-5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl border border-emerald-400/40 text-white font-black text-lg shadow-md animate-fadeIn">
+                                                <span class="truncate">${ans.text}</span>
+                                                <span class="bg-black/20 px-3 py-0.5 rounded-md text-sm">${ans.points}+</span>
+                                            </div>
+                                        `;
+                                    } else {
+                                        return `
+                                            <div class="flex justify-between items-center h-14 px-5 bg-[#12193C] border border-[#22316B]/60 rounded-xl text-slate-600 font-bold text-lg">
+                                                <span class="bg-slate-800/50 w-7 h-7 rounded-full flex items-center justify-center text-xs text-slate-500 font-mono">${idx + 1}</span>
+                                                <span class="text-slate-700 tracking-widest text-xs">•••••••••••••••••••••</span>
+                                                <span class="bg-slate-900/40 px-2.5 py-0.5 rounded-md text-xs font-mono text-slate-700">؟</span>
+                                            </div>
+                                        `;
+                                    }
+                                }).join('')}
+                            </div>
+                        </div>
                     </div>
                 `;
-            }).join('');
-        }
-
-        // مساعد رندر الإجابات لشاشة العرض الكبرى (مخفية بالنقاط أو مكشوفة بالكامل)
-        function renderDisplayAnswers() {
-            if (!gameState.currentAnswers || gameState.currentAnswers.length === 0) {
-                return `<div class="text-slate-600 font-medium py-6">بانتظار بدء الجولة...</div>`;
-            }
-            return gameState.currentAnswers.map((ans, idx) => {
-                const isRevealed = gameState.revealed && gameState.revealed[idx];
-                if (isRevealed) {
-                    return `
-                        <div class="flex justify-between items-center h-14 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl border border-emerald-400/30 text-white font-black text-lg shadow-md animate-fadeIn">
-                            <span>${ans.text}</span>
-                            <span class="bg-black/20 px-3 py-0.5 rounded-md">${ans.points}+</span>
+            } else if (currentRole === "player") {
+                // 3. واجهة اللاعب المحمول (الكابس الذكي للفرق)
+                if (!playerTeam) {
+                    // اختيار الفريق أولاً للاعب
+                    container.innerHTML = `
+                        ${topBarHtml}
+                        <div class="max-w-md mx-auto text-center p-4">
+                            <div class="panel-bg rounded-3xl p-6 flex flex-col gap-4">
+                                <h2 class="text-lg font-black text-yellow-400">مرحباً بك أيها المتسابق 👋<br><span class="text-sm font-normal text-white">اختر فريقك لتفعيل كابس الجوال الخاص بك:</span></h2>
+                                <div class="flex flex-col gap-2.5">
+                                    ${Object.keys(TEAM_DETAILS).map(tk => `
+                                        <button onclick="selectPlayerTeam('${tk}')" class="w-full h-12 rounded-xl font-black text-white border text-sm transition-all ${TEAM_DETAILS[tk].bg} ${TEAM_DETAILS[tk].border}">
+                                            الدخول باسم: ${TEAM_DETAILS[tk].name}
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
                         </div>
                     `;
                 } else {
-                    return `
-                        <div class="flex justify-between items-center h-14 px-6 bg-[#131B3E] border border-[#23316B] rounded-xl text-slate-500 font-bold text-lg">
-                            <span>••••••••••••••••••••••••</span>
-                            <span class="bg-slate-900/40 px-3 py-0.5 rounded-md text-sm text-slate-600">؟</span>
+                    // زر الكابس المكتمل والمطابق لـ A5.2
+                    const isMyTurn = gameState.activeTeam === playerTeam;
+                    container.innerHTML = `
+                        ${topBarHtml}
+                        <div class="max-w-md mx-auto text-center p-4">
+                            <div class="panel-bg rounded-3xl p-6 flex flex-col items-center gap-4">
+                                <div class="text-xs font-bold text-gray-400">
+                                    فريقك الحالي: <span class="text-yellow-400 font-black">${TEAM_DETAILS[playerTeam].name}</span>
+                                </div>
+                                
+                                <button id="master-buzzer" onclick="pressBuzzer()" 
+                                    disabled="${!gameState.buzzerOpen}"
+                                    class="w-52 h-52 rounded-full font-black text-2xl border-4 text-white transition-all shadow-2xl flex items-center justify-center uppercase select-none active:scale-90
+                                    ${!gameState.buzzerOpen ? 'bg-slate-800 border-slate-700 text-slate-500 cursor-not-allowed' : 'bg-red-600 hover:bg-red-500 border-red-400 animate-pulse'}">
+                                    ${!gameState.buzzerOpen ? 'مقفل 🔒' : 'اكـبـس 🚨'}
+                                </button>
+                                
+                                <div class="w-full p-3 rounded-xl text-xs font-bold ${isMyTurn ? 'bg-green-950 text-green-300 border border-green-800' : 'bg-slate-900 text-slate-400'}">
+                                    ${isMyTurn ? '🔊 فريقك كبس أولاً ولديه حق الإجابة الآن!' : (gameState.activeTeam ? `الدور الحالي: ${TEAM_DETAILS[gameState.activeTeam].name}` : 'بانتظار فتح الكابس من المقدم...')}
+                                </div>
+                            </div>
                         </div>
                     `;
                 }
-            }).join('');
-        }
-
-        // وظائف التحكم والأكشن التفاعلية
-        function triggerAction(actionType) {
-            if (actionType === 'toggleBuzzer') {
-                db.ref(`rooms/${currentRoom}/buzzerOpen`).set(!gameState.buzzerOpen);
-            } else if (actionType === 'resetBuzzer') {
-                // إعادة تحميل جولة افتراضية مستقرة للتجربة الفورية
-                const resetData = {
-                    currentCategory: "السفر والسياحة",
-                    questionText: "أهم غرض يحرص المسافر على التأكد منه قبل التوجه للمطار؟",
-                    buzzerOpen: true,
-                    revealed: {},
-                    currentAnswers: [
-                        { text: "جواز السفر وتأشيرة الدخول", points: 50 },
-                        { text: "الجوال واللابتوب والشواحن", points: 22 },
-                        { text: "النقود وبطاقات الائتمان", points: 16 },
-                        { text: "تذاكر الطيران وحجز الفندق", points: 8 }
-                    ]
-                };
-                db.ref(`rooms/${currentRoom}`).update(resetData);
             }
         }
 
-        function toggleAnswerReveal(idx) {
-            const currentStatus = gameState.revealed && gameState.revealed[idx];
-            db.ref(`rooms/${currentRoom}/revealed/${idx}`).set(!currentStatus);
+        // ================= وظائف التحكم والأكشن بالفايربيز =================
+
+        function changeRound(index) {
+            const selected = CURATED_ROUNDS[index];
+            db.ref(`rooms/${currentRoom}`).update({
+                currentCategory: selected.category,
+                questionText: selected.question,
+                currentAnswers: selected.answers,
+                revealed: {},
+                strikes: 0,
+                activeTeam: "",
+                buzzerOpen: false
+            });
         }
 
-        function addPoints(teamKey, amount) {
-            const currentScore = gameState.teams && gameState.teams[teamKey] && gameState.teams[teamKey].score ? gameState.teams[teamKey].score : 0;
-            db.ref(`rooms/${currentRoom}/teams/${teamKey}/score`).set(currentScore + amount);
+        function toggleBuzzer() {
+            db.ref(`rooms/${currentRoom}/buzzerOpen`).set(!gameState.buzzerOpen);
+        }
+
+        function setActiveTeam(teamKey) {
+            db.ref(`rooms/${currentRoom}/activeTeam`).set(teamKey);
+        }
+
+        // دالة الضغط السحرية: كشف + احتساب تلقائي للنقاط فوراً
+        function clickAnswerRow(idx) {
+            const isAlreadyRevealed = gameState.revealed && gameState.revealed[idx];
+            
+            // 1. عكس حالة الكشف في القاعدة
+            db.ref(`rooms/${currentRoom}/revealed/${idx}`).set(!isAlreadyRevealed);
+
+            // 2. إذا كانت غير مكشوفة وتم كشفها، وكان هناك فريق مستحوذ، احسب له النقاط تلقائياً
+            if (!isAlreadyRevealed && gameState.activeTeam) {
+                const pointsToAdd = gameState.currentAnswers[idx].points;
+                const currentScore = gameState.teams?.[gameState.activeTeam]?.score || 0;
+                db.ref(`rooms/${currentRoom}/teams/${gameState.activeTeam}/score`).set(currentScore + pointsToAdd);
+            }
+        }
+
+        function modifyPoints(teamKey, amount) {
+            const currentScore = gameState.teams?.[teamKey]?.score || 0;
+            let newScore = currentScore + amount;
+            if (newScore < 0) newScore = 0;
+            db.ref(`rooms/${currentRoom}/teams/${teamKey}/score`).set(newScore);
+        }
+
+        function triggerStrike() {
+            const nextStrike = (gameState.strikes || 0) + 1;
+            db.ref(`rooms/${currentRoom}`).update({
+                strikes: nextStrike > 3 ? 3 : nextStrike,
+                showStrikeOverlay: true
+            });
+            // إخفاء فلاش الإكس تلقائياً بعد 1.5 ثانية للعودة لمشاهدة الجدول
+            setTimeout(() => {
+                db.ref(`rooms/${currentRoom}/showStrikeOverlay`).set(false);
+            }, 1500);
+        }
+
+        function resetStrikes() {
+            db.ref(`rooms/${currentRoom}`).update({ strikes: 0, showStrikeOverlay: false });
+        }
+
+        function selectPlayerTeam(teamKey) {
+            playerTeam = teamKey;
+            renderGame();
+        }
+
+        function pressBuzzer() {
+            if (!gameState.buzzerOpen || gameState.activeTeam) return;
+            // أول لاعب يكبس يستحوذ فريقه على السؤال فوراً ويقفل الكابس تلقائياً
+            db.ref(`rooms/${currentRoom}`).update({
+                activeTeam: playerTeam,
+                buzzerOpen: false
+            });
+        }
+
+        function exitRoom() {
+            if(confirm("هل أنت متأكد من رغبتك في الخروج والعودة للشاشة الرئيسية؟")) {
+                window.location.reload();
+            }
         }
     </script>
 </body>
