@@ -3,15 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق - النسخة A.5.3</title>
+    <title>لعبة سياق - النسخة A.5.5 المحمية</title>
+    
+    <!-- استدعاء المكتبات المستقرة -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- الفايربيز الكلاسيكي المضمون للمتصفحات -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+
     <style>
         body { background: radial-gradient(circle at center, #111A3A 0%, #070B19 100%); color: #FFFFFF; font-family: system-ui, -apple-system, sans-serif; }
         .panel-bg { background-color: #121B3D; border: 1px solid #1E2E69; }
         .board-bg { background-color: #0D1430; border: 1px solid #1E2E69; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
+        .animate-scaleUp { animation: scaleUp 0.2s ease-out forwards; }
+
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: #070B19; }
         ::-webkit-scrollbar-thumb { background: #1E2E69; border-radius: 4px; }
@@ -19,23 +32,22 @@
 </head>
 <body class="min-h-screen select-none">
     <div id="root"></div>
-    <script type="text/babel" data-type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getDatabase, ref, onValue, update, set, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
 
+    <script type="text/babel">
+        // إعدادات الاتصال بقاعدة البيانات
         const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
-        const db = getDatabase(initializeApp(firebaseConfig));
+        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+        const db = firebase.database();
 
-        // مصفوفة الألوان المخصصة لكل فريق لربط الهوية البصرية كاملة بالصناديق
         const TEAM_COLORS = {
-            team1: { name: "الفريق الأحمر", hex: "#EF4444", text: "text-red-400" },
-            team2: { name: "الفريق الأزرق", hex: "#3B82F6", text: "text-blue-400" },
-            team3: { name: "الفريق الأخضر", hex: "#10B981", text: "text-emerald-400" },
-            team4: { name: "الفريق البنفسجي", hex: "#8B5CF6", text: "text-purple-400" },
-            team5: { name: "الفريق البرتقالي", hex: "#F97316", text: "text-orange-400" },
-            team6: { name: "الفريق السماوي", hex: "#06B6D4", text: "text-cyan-400" },
-            team7: { name: "الفريق الوردي", hex: "#EC4899", text: "text-pink-400" },
-            team8: { name: "الفريق الأصفر", hex: "#EAB308", text: "text-yellow-400" }
+            team1: { name: "الفريق الأحمر", hex: "#EF4444" },
+            team2: { name: "الفريق الأزرق", hex: "#3B82F6" },
+            team3: { name: "الفريق الأخضر", hex: "#10B981" },
+            team4: { name: "الفريق البنفسجي", hex: "#8B5CF6" },
+            team5: { name: "الفريق البرتقالي", hex: "#F97316" },
+            team6: { name: "الفريق السماوي", hex: "#06B6D4" },
+            team7: { name: "الفريق الوردي", hex: "#EC4899" },
+            team8: { name: "الفريق الأصفر", hex: "#EAB308" }
         };
 
         const CURATED_ROUNDS = [
@@ -55,18 +67,8 @@
                 answers: [
                     { text: "الجوال أكيد", points: 55 },
                     { text: "مفتاح السيارة", points: 23 },
-                    { text: "المحفظة / بطاقة الصراف للـ Apple Pay", points: 15 },
-                    { text: "النظارة الشمسية عشان الشمس تعمي", points: 7 }
-                ]
-            },
-            {
-                category: "الحياة اليومية",
-                question: "وش الغرض اللي دايمًا يضيع بالبيت وتقلبون البيت عشان تلقونه؟",
-                answers: [
-                    { text: "ريموت التلفزيون", points: 46 },
-                    { text: "مفتاح البيت أو السيارة", points: 28 },
-                    { text: "شاحن الجوال الأصلي", points: 17 },
-                    { text: "قصافة الأظافر", points: 9 }
+                    { text: "المحفظة / بطاقة الصراف", points: 15 },
+                    { text: "النظارة الشمسية", points: 7 }
                 ]
             },
             {
@@ -78,59 +80,52 @@
                     { text: "مخلل مالح يكسر الطعم", points: 13 },
                     { text: "شطة حارة كريستال", points: 7 }
                 ]
-            },
-            {
-                category: "السعودية والخليج",
-                question: "وش الغرض اللي مستحيل تكتمل «الكشتة» أو طعة البر بدونه؟",
-                answers: [
-                    { text: "عزبة الطبخ والشاهي أهم شيء", points: 45 },
-                    { text: "الحطب والولاعة لشبة النار", points: 29 },
-                    { text: "ورق البلوت والطاولة", points: 17 },
-                    { text: "الفرشة والمساند عشان التكوة", points: 9 }
-                ]
-            },
-            {
-                category: "التقنية والألعاب",
-                question: "وش الموقف اللي يخلي «القيمر» يضرب الطاولة أو يرمي اليد من القهر؟",
-                answers: [
-                    { text: "اللاق يرتفع فجأة ويموت قبل الفوز", points: 51 },
-                    { text: "يموت من هكر وغشاش بالقيم", points: 24 },
-                    { text: "خوياه بالتيم منوب وضيعوا الخطة", points: 16 },
-                    { text: "تطفي الكهرباء أو يفصل النت بنص القيم", points: 9 }
-                ]
             }
         ];
 
-        const playSynthSound = (type) => {
-            try {
-                const ctx = new (window.AudioContext || window.webkitAudioContext)();
-                const osc = ctx.createOscillator(); const gain = ctx.createGain();
-                osc.connect(gain); gain.connect(ctx.destination);
-                if (type === 'correct') {
-                    osc.type = 'sine'; osc.frequency.setValueAtTime(587.33, ctx.currentTime); osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
-                    gain.gain.setValueAtTime(0.2, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-                    osc.start(); osc.stop(ctx.currentTime + 0.4);
-                } else if (type === 'wrong') {
-                    osc.type = 'sawtooth'; osc.frequency.setValueAtTime(130, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.3, ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
-                    osc.start(); osc.stop(ctx.currentTime + 0.5);
-                }
-            } catch(e) {}
-        };
-
-        const initialRoomState = (clearScores = false, currentTeams = null) => {
+        const initialRoomState = () => {
             const defaultTeams = {};
             for(let i=1; i<=8; i++) {
-                const existingName = currentTeams?.[`team${i}`]?.name;
-                defaultTeams[`team${i}`] = { 
-                    name: existingName && existingName.trim() !== "" ? existingName : `فريق ${i}`, 
-                    score: clearScores ? 0 : (currentTeams?.[`team${i}`]?.score || 0), 
-                    errors: 0 
-                };
+                defaultTeams[`team${i}`] = { name: `فريق ${i}`, score: 0, errors: 0 };
             }
             return {
                 currentCategory: "", activeTeam: "", buzzerOpen: true, revealed: {0:false,1:false,2:false,3:false,4:false}, roundActive: false, roundNumber: 1, questionText: "", currentAnswers: [],
                 buzzerQueue: [], teams: defaultTeams
+            };
+        };
+
+        // فلتر الأمان لمنع انهيار الواجهة بسبب تشوهات بيانات الفايربيز
+        const sanitizeState = (data) => {
+            if (!data) return initialRoomState();
+            
+            const cleanTeams = {};
+            for(let i=1; i<=8; i++) {
+                const tKey = `team${i}`;
+                const fTeam = data.teams?.[tKey] || {};
+                cleanTeams[tKey] = {
+                    name: fTeam.name || `فريق ${i}`,
+                    score: Number(fTeam.score) || 0,
+                    errors: Number(fTeam.errors) || 0
+                };
+            }
+
+            const cleanAnswers = Array.isArray(data.currentAnswers) ? data.currentAnswers : 
+                                 (data.currentAnswers ? Object.values(data.currentAnswers) : []);
+            
+            const cleanQueue = Array.isArray(data.buzzerQueue) ? data.buzzerQueue : 
+                               (data.buzzerQueue ? Object.values(data.buzzerQueue) : []);
+
+            return {
+                currentCategory: data.currentCategory || "",
+                activeTeam: data.activeTeam || "",
+                buzzerOpen: data.buzzerOpen !== false,
+                revealed: data.revealed || {0:false,1:false,2:false,3:false,4:false},
+                roundActive: !!data.roundActive,
+                roundNumber: Number(data.roundNumber) || 1,
+                questionText: data.questionText || "",
+                currentAnswers: cleanAnswers,
+                buzzerQueue: cleanQueue,
+                teams: cleanTeams
             };
         };
 
@@ -140,45 +135,45 @@
             const [gameState, setGameState] = React.useState(initialRoomState());
             const [localTeamName, setLocalTeamName] = React.useState('');
             const [showGithubMenu, setShowGithubMenu] = React.useState(false);
-            const [gitSearch, setGitSearch] = React.useState('');
             const [showContestantOptions, setShowContestantOptions] = React.useState(false);
 
             React.useEffect(() => {
                 if (!room) return;
-                const roomRef = ref(db, `rooms/${room}`);
-                const unsubscribe = onValue(roomRef, (snapshot) => {
+                const roomRef = db.ref(`rooms/${room}`);
+                
+                const handleData = (snapshot) => {
                     const data = snapshot.val();
                     if (data) {
-                        setGameState(prev => {
-                            const prevRev = Object.values(prev.revealed || {}).filter(Boolean).length;
-                            const newRev = Object.values(data.revealed || {}).filter(Boolean).length;
-                            if (newRev > prevRev) playSynthSound('correct');
-                            const prevErr = Object.values(prev.teams || {}).reduce((acc, t) => acc + (t.errors || 0), 0);
-                            const newErr = Object.values(data.teams || {}).reduce((acc, t) => acc + (t.errors || 0), 0);
-                            if (newErr > prevErr) playSynthSound('wrong');
-                            return { ...prev, ...data };
-                        });
+                        setGameState(sanitizeState(data));
                     } else if (role === 'host') {
-                        set(roomRef, initialRoomState());
+                        roomRef.set(initialRoomState());
                     }
-                });
-                return () => unsubscribe();
+                };
+
+                roomRef.on('value', handleData);
+                return () => roomRef.off('value', handleData);
             }, [room, role]);
 
             React.useEffect(() => {
                 if (role && role.startsWith('team') && gameState.teams?.[role]) {
                     setLocalTeamName(gameState.teams[role].name);
                 }
-            }, [role, gameState.teams]);
+            }, [role]);
 
-            const updateDB = (updates) => update(ref(db, `rooms/${room}`), updates);
+            const updateDB = (updates) => db.ref(`rooms/${room}`).update(updates);
 
             const pressBuzzer = (teamKey) => {
                 if (gameState.buzzerOpen && gameState.teams[teamKey].errors < 3) {
-                    const roomRef = ref(db, `rooms/${room}`);
-                    runTransaction(roomRef, (currentData) => {
+                    const roomRef = db.ref(`rooms/${room}`);
+                    roomRef.transaction((currentData) => {
                         if (!currentData) return currentData;
                         if (!currentData.buzzerQueue) currentData.buzzerQueue = [];
+                        
+                        // تحويل الكيواني إلى مصفوفة حقيقية إذا تشوهت داخل الترانزاكشن
+                        if (!Array.isArray(currentData.buzzerQueue)) {
+                            currentData.buzzerQueue = Object.values(currentData.buzzerQueue);
+                        }
+                        
                         if (!currentData.buzzerQueue.includes(teamKey)) currentData.buzzerQueue.push(teamKey);
                         if (!currentData.activeTeam) currentData.activeTeam = currentData.buzzerQueue[0];
                         return currentData;
@@ -209,10 +204,6 @@
                 }
             };
 
-            const clearBuzzerState = () => {
-                updateDB({ activeTeam: "", buzzerQueue: [], buzzerOpen: true });
-            };
-
             const passTurnToNextInQueue = () => {
                 if (gameState.buzzerQueue && gameState.buzzerQueue.length > 1) {
                     const currentActive = gameState.activeTeam;
@@ -234,32 +225,29 @@
 
             if (!role) return (
                 <div className="flex flex-col items-center justify-center min-h-screen p-4 max-w-md mx-auto">
-                    {/* ترويسة اللعبة المطابقة تماماً لـ image_9.png */}
                     <div className="text-center mb-6">
                         <h1 className="text-6xl font-black text-[#F2C94C] tracking-wide filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.4)]">سياق</h1>
-                        <p className="text-blue-400/90 font-bold text-sm mt-2 tracking-widest">النسخة A.5.3</p>
+                        <p className="text-blue-400/90 font-bold text-sm mt-2 tracking-widest">النسخة A.5.5</p>
                     </div>
 
-                    {/* الصندوق الشفاف المتناسق الداكن من التصميم المرفق */}
                     <div className="bg-[#1B2344]/80 border border-[#2B3A6F] rounded-[28px] p-6 w-full flex flex-col gap-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-md">
-                        
                         <div className="bg-[#2D1F55] border border-[#443182] rounded-2xl p-1 flex items-center h-14">
                             <input className="bg-transparent text-center font-bold text-lg w-full text-white placeholder-slate-400/60 outline-none" 
                                    placeholder="أدخل رمز الغرفة" value={room} onChange={e => setRoom(e.target.value.toUpperCase())} />
                         </div>
 
                         <button disabled={!room} onClick={() => setRole('host')}
-                                className="bg-[#E28743] hover:bg-[#CD7432] disabled:opacity-30 font-extrabold text-white h-13 rounded-2xl text-center text-base transition-all active:scale-98 shadow-md">
+                                className="bg-[#E28743] hover:bg-[#CD7432] disabled:opacity-30 font-extrabold text-white h-14 rounded-2xl text-center text-base transition-all active:scale-95 shadow-md">
                             دخول كمقدم اللعبة
                         </button>
 
                         <button disabled={!room} onClick={() => setRole('display')}
-                                className="bg-[#2F80ED] hover:bg-[#1B66D1] disabled:opacity-30 font-extrabold text-white h-13 rounded-2xl text-center text-base transition-all active:scale-98 shadow-md">
+                                className="bg-[#2F80ED] hover:bg-[#1B66D1] disabled:opacity-30 font-extrabold text-white h-14 rounded-2xl text-center text-base transition-all active:scale-95 shadow-md">
                             شاشة العرض الكبرى
                         </button>
 
                         <button disabled={!room} onClick={() => setShowContestantOptions(!showContestantOptions)}
-                                className="bg-[#0091FF] hover:bg-[#0076D6] disabled:opacity-30 font-extrabold text-white h-13 rounded-2xl text-center text-base transition-all active:scale-98 shadow-md flex items-center justify-center gap-2">
+                                className="bg-[#0091FF] hover:bg-[#0076D6] disabled:opacity-30 font-extrabold text-white h-14 rounded-2xl text-center text-base transition-all active:scale-95 shadow-md flex items-center justify-center gap-2">
                             <span>دخول كمتسابق</span>
                             <span className="text-xs opacity-70">{showContestantOptions ? '▲' : '▼'}</span>
                         </button>
@@ -314,7 +302,7 @@
                                     <h3 className="text-sm md:text-base font-black text-white leading-relaxed mt-1">{gameState.questionText}</h3>
                                 </div>
                                 <div className="grid grid-cols-1 gap-2">
-                                    {gameState.currentAnswers && gameState.currentAnswers.map((ans, idx) => {
+                                    {gameState.currentAnswers.map((ans, idx) => {
                                         const isRevealed = gameState.revealed?.[idx];
                                         return (
                                             <div key={idx} className={`rounded-xl px-3 py-2.5 flex justify-between items-center text-xs font-bold border h-12
@@ -338,7 +326,7 @@
                                         backgroundColor: myTurn ? myColor : (gameState.buzzerOpen && !gameState.activeTeam ? '#DC2626' : '#1E293B'),
                                         borderColor: myTurn ? '#FFFFFF' : (gameState.buzzerOpen && !gameState.activeTeam ? '#EF4444' : '#334155')
                                     }}>
-                                {myTurn ? 'أجب الآن!' : (gameState.buzzerOpen && !gameState.activeTeam ? 'إكبس البزر!' : 'انتظر')}
+                                {myTurn ? 'أجب الآن!' : (gameState.buzzerOpen && !gameState.activeTeam ? 'إكبس!' : 'انتظر')}
                             </button>
                         </div>
                     </div>
@@ -349,8 +337,6 @@
                 const activeTeamColor = gameState.activeTeam ? (TEAM_COLORS[gameState.activeTeam]?.hex || '#EF4444') : '#1E293B';
                 return (
                     <div className="p-4 md:p-6 min-h-screen flex flex-col justify-between max-w-[1600px] mx-auto relative animate-fadeIn">
-                        
-                        {/* شريط معلومات الفرق العلوي مع دعم تمييز الألوان لكل فريق */}
                         <div className="panel-bg rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4 mb-4 shadow-xl">
                             <div className="flex items-center gap-3">
                                 <button onClick={() => setRole(null)} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-4 py-1.5 rounded-xl text-sm">🚪 خروج</button>
@@ -363,7 +349,7 @@
                                     const isBlocked = gameState.teams[tKey]?.errors >= 3;
                                     const teamCol = TEAM_COLORS[tKey] || { hex: '#FFF' };
                                     return (
-                                        <div key={tKey} className={`px-3 py-1.5 rounded-xl text-xs font-black border transition-all flex items-center gap-1.5`}
+                                        <div key={tKey} className="px-3 py-1.5 rounded-xl text-xs font-black border transition-all flex items-center gap-1.5"
                                              style={{ 
                                                  backgroundColor: isSelected ? teamCol.hex : '#1C2646', 
                                                  borderColor: isSelected ? '#FFF' : `${teamCol.hex}40`,
@@ -380,11 +366,7 @@
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start my-auto w-full">
-                            
-                            {/* لوحة التحكم الجانبية وحالة الكبس المحدثة بناءً على image_10.png */}
                             <div className="lg:col-span-4 flex flex-col gap-4 w-full">
-                                
-                                {/* حالة الكبس اللحظية - يتغير لون الصندوق بالكامل حسب لون الفريق المكبس */}
                                 <div className="panel-bg rounded-[24px] p-5 shadow-lg flex flex-col gap-4 text-center">
                                     <h4 className="text-sm font-black text-slate-300 tracking-wide">حالة الكبس اللحظية</h4>
                                     
@@ -393,7 +375,7 @@
                                              style={{ backgroundColor: activeTeamColor }}>
                                             <span className="text-xs font-bold opacity-90 mb-1 tracking-wider">أسرع كبسة معتمدة</span>
                                             <h3 className="text-2xl font-black">اللاعب: {gameState.teams[gameState.activeTeam]?.name}</h3>
-                                            <span className="text-xs opacity-75 mt-1">({TEAM_COLORS[gameState.activeTeam]?.name || gameState.activeTeam})</span>
+                                            <span className="text-xs opacity-85 mt-1 font-bold">(فريق {gameState.activeTeam.replace('team', '')})</span>
                                         </div>
                                     ) : (
                                         <div className="rounded-2xl p-6 text-slate-500 bg-[#0B132B] border-2 border-dashed border-slate-800/80 flex flex-col justify-center items-center h-32">
@@ -402,8 +384,8 @@
                                     )}
 
                                     {isHostMode && (
-                                        <button onClick={clearBuzzerState} 
-                                                className="w-full bg-[#1F40AA] hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm transition-all active:scale-97 shadow-md">
+                                        <button onClick={() => updateDB({ activeTeam: "", buzzerQueue: [], buzzerOpen: true })} 
+                                                className="w-full bg-[#1F40AA] hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm transition-all active:scale-95 shadow-md">
                                             تصفير وتفعيل الكبس للجميع
                                         </button>
                                     )}
@@ -415,7 +397,7 @@
                                         <div className="relative">
                                             <button onClick={() => setShowGithubMenu(!showGithubMenu)} className="w-full bg-[#1F2937] text-white font-bold p-3 rounded-xl text-xs flex justify-between">
                                                 <span>📂 تصفح وبحث في بنك المواضيع</span>
-                                                <span>▾</span>
+                                                <span>▼</span>
                                             </button>
                                             {showGithubMenu && (
                                                 <div className="absolute right-0 top-full mt-2 w-full bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-50 p-2 max-h-60 overflow-y-auto">
@@ -439,7 +421,6 @@
                                 )}
                             </div>
 
-                            {/* شاشة العرض الرئيسية للأجوبة والمشاهدة */}
                             <div className="lg:col-span-8 w-full">
                                 {!gameState.roundActive ? (
                                     <div className="board-bg rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
@@ -463,7 +444,7 @@
                                         </div>
 
                                         <div className="grid grid-cols-1 gap-3 max-w-3xl mx-auto w-full">
-                                            {gameState.currentAnswers && gameState.currentAnswers.map((ans, idx) => {
+                                            {gameState.currentAnswers.map((ans, idx) => {
                                                 const isRevealed = gameState.revealed?.[idx];
                                                 return (
                                                     <div key={idx} onClick={() => isHostMode && clickRevealAnswer(idx, ans.points)}
