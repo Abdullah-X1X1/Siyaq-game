@@ -3,141 +3,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق - النسخة A.5.6 التشخيصية</title>
+    <title>لعبة سياق - النسخة الفولاذية المضمونة A.6.0</title>
     
-    <!-- استدعاء المكتبات المستقرة -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- الفايربيز الكلاسيكي المضمون -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
     <style>
-        body { background: radial-gradient(circle at center, #111A3A 0%, #070B19 100%); color: #FFFFFF; font-family: system-ui, -apple-system, sans-serif; }
+        body { 
+            background: radial-gradient(circle at center, #111A3A 0%, #070B19 100%); 
+            color: #FFFFFF; 
+            font-family: system-ui, -apple-system, sans-serif; 
+        }
         .panel-bg { background-color: #121B3D; border: 1px solid #1E2E69; }
         .board-bg { background-color: #0D1430; border: 1px solid #1E2E69; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body class="min-h-screen select-none">
-    
-    <!-- الحاوية الرئيسية للعبة -->
-    <div id="root"></div>
 
-    <!-- كود اللعبة البرمجي المحمي -->
-    <script type="text/babel">
+    <div id="login-screen" class="flex flex-col items-center justify-center min-h-screen p-4 max-w-md mx-auto animate-fadeIn">
+        <div class="text-center mb-6">
+            <h1 class="text-6xl font-black text-[#F2C94C] tracking-wide">سياق</h1>
+            <p class="text-emerald-400 font-bold text-sm mt-1">النسخة الفولاذية المضمونة A.6.0</p>
+        </div>
+        <div class="bg-[#1B2344]/80 border border-[#2B3A6F] rounded-[28px] p-6 w-full flex flex-col gap-3 shadow-2xl backdrop-blur-md">
+            <input id="room-input" type="text" class="bg-[#2D1F55] border border-[#443182] rounded-2xl text-center font-bold text-lg h-14 w-full text-white outline-none placeholder-gray-500 uppercase" placeholder="أدخل رمز الغرفة">
+            <button id="btn-host" class="bg-[#E28743] hover:bg-[#CD7432] font-extrabold text-white h-14 rounded-2xl transition-all active:scale-95 shadow-md">دخول كمقدم اللعبة</button>
+            <button id="btn-display" class="bg-[#2F80ED] hover:bg-[#1B66D1] font-extrabold text-white h-14 rounded-2xl transition-all active:scale-95 shadow-md">شاشة العرض الكبرى</button>
+        </div>
+        <div id="boot-error" class="hidden mt-4 bg-red-950/80 border border-red-500 rounded-xl p-4 text-sm text-red-300 w-full text-center"></div>
+    </div>
+
+    <div id="game-screen" class="hidden min-h-screen p-4 animate-fadeIn">
+        </div>
+
+    <script>
         let db = null;
-        let bootError = null;
+        let currentRoom = "";
+        let currentRole = "";
+        let gameState = {};
 
-        // فحص آمن لتحميل الفايربيز قبل تشغيل التطبيق
+        // تهيئة الفايربيز الآمنة بدون اعتمادات معقدة
         try {
             if (typeof firebase !== 'undefined') {
                 const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
                 if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
                 db = firebase.database();
             } else {
-                bootError = "فشل تحميل ملفات الفايربيز من الـ CDN. تحقق من اتصال الإنترنت أو قيود الحجب.";
+                showBootError("تعذر الاتصال بخوادم الفايربيز الأساسية. يرجى التحقق من اتصال الإنترنت.");
             }
         } catch (e) {
-            bootError = "خطأ في تهيئة قاعدة البيانات: " + e.message;
+            showBootError("خطأ في النظام الداخلي: " + e.message);
         }
 
-        const TEAM_COLORS = {
-            team1: { name: "الفريق الأحمر", hex: "#EF4444" }, team2: { name: "الفريق الأزرق", hex: "#3B82F6" },
-            team3: { name: "الفريق الأخضر", hex: "#10B981" }, team4: { name: "الفريق البنفسجي", hex: "#8B5CF6" },
-            team5: { name: "الفريق البرتقالي", hex: "#F97316" }, team6: { name: "الفريق السماوي", hex: "#06B6D4" },
-            team7: { name: "الفريق الوردي", hex: "#EC4899" }, team8: { name: "الفريق الأصفر", hex: "#EAB308" }
-        };
+        function showBootError(msg) {
+            const errDiv = document.getElementById("boot-error");
+            errDiv.innerText = msg;
+            errDiv.classList.remove("hidden");
+        }
 
-        const CURATED_ROUNDS = [
-            {
-                category: "الحياة اليومية",
-                question: "وش أول شيء تسويه أول ما تفتح عينك وتصحى من النوم؟",
-                answers: [
-                    { text: "أقعد أدور الجوال تحت المخدرة", points: 52 },
-                    { text: "أطفي المنبه وأرجع أنام خمس دقايق", points: 26 },
-                    { text: "أتثاوب وأتمغط بالفراش", points: 13 },
-                    { text: "أروح أركض للحمام وأتوضأ", points: 9 }
-                ]
+        // الاستماع لأزرار واجهة الدخول
+        document.getElementById("btn-host").addEventListener("click", () => handleLogin("host"));
+        document.getElementById("btn-display").addEventListener("click", () => handleLogin("display"));
+
+        function handleLogin(role) {
+            const roomInput = document.getElementById("room-input").value.trim().toUpperCase();
+            if (!roomInput) {
+                alert("الرجاء إدخال رمز الغرفة أولاً");
+                return;
             }
-        ];
+            if (!db) {
+                alert("النظام غير متصل بقاعدة البيانات حالياً.");
+                return;
+            }
 
-        function App() {
-            const [role, setRole] = React.useState(null);
-            const [room, setRoom] = React.useState('');
-            const [gameState, setGameState] = React.useState({
-                currentCategory: "", activeTeam: "", buzzerOpen: true, revealed: {}, roundActive: false, questionText: "", currentAnswers: [], buzzerQueue: [], teams: {}
+            currentRoom = roomInput;
+            currentRole = role;
+
+            // إخفاء شاشة الدخول وإظهار شاشة اللعبة
+            document.getElementById("login-screen").classList.add("hidden");
+            document.getElementById("game-screen").classList.remove("hidden");
+
+            // بدء الاستماع الحي للتغيرات في الفايربيز
+            db.ref(`rooms/${currentRoom}`).on('value', (snapshot) => {
+                const data = snapshot.val();
+                if (data) {
+                    gameState = data;
+                    renderGame();
+                } else {
+                    // إذا كانت الغرفة جديدة، نقوم بتهيئتها افتراضياً
+                    initializeNewRoom();
+                }
             });
+        }
 
-            React.useEffect(() => {
-                if (!room || !db) return;
-                const roomRef = db.ref(`rooms/${room}`);
-                const handleData = (snapshot) => {
-                    const data = snapshot.val();
-                    if (data) setGameState(data);
-                };
-                roomRef.on('value', handleData);
-                return () => roomRef.off('value', handleData);
-            }, [room]);
+        function initializeNewRoom() {
+            const defaultState = {
+                currentCategory: "انتظار",
+                questionText: "بانتظار اختيار تصنيف الجولة من لوحة التحكم",
+                activeTeam: "",
+                buzzerOpen: true,
+                roundActive: false,
+                currentAnswers: [],
+                revealed: {},
+                teams: {
+                    team1: { name: "الفريق الأحمر", score: 0 },
+                    team2: { name: "الفريق الأزرق", score: 0 }
+                }
+            };
+            db.ref(`rooms/${currentRoom}`).set(defaultState);
+        }
 
-            // شاشة عرض الخطأ الداخلي إن وجد
-            if (bootError) {
-                return (
-                    <div className="flex items-center justify-center min-h-screen p-4 text-center max-w-md mx-auto">
-                        <div className="bg-red-950/80 border border-red-500 rounded-2xl p-6 shadow-2xl">
-                            <h2 className="text-xl font-black text-red-400 mb-2">⚠️ تعذر تشغيل النظام الداخلي</h2>
-                            <p className="text-xs text-slate-300 font-mono bg-black/30 p-3 rounded-xl text-right overflow-x-auto">{bootError}</p>
+        // دالة الرسم الأساسية (Render) المعتمدة على الـ DOM النقي
+        function renderGame() {
+            const gameScreen = document.getElementById("game-screen");
+            
+            if (currentRole === "host") {
+                // تصميم واجهة مقدم اللعبة
+                gameScreen.innerHTML = `
+                    <div class="max-w-5xl mx-auto flex flex-col gap-4">
+                        <div class="panel-bg rounded-2xl p-4 flex justify-between items-center shadow-md">
+                            <span class="text-yellow-400 font-black text-xl">لوحة التحكم والمراقبة</span>
+                            <span class="bg-blue-900/50 px-4 py-1 rounded-full text-xs border border-blue-700">الغرفة: ${currentRoom}</span>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="flex flex-col gap-3">
+                                <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
+                                    <h3 class="text-sm font-bold text-gray-400 mb-1">لوحة التحكم الذكية</h3>
+                                    <button onclick="triggerAction('toggleBuzzer')" class="w-full py-3 rounded-xl font-bold transition-all ${gameState.buzzerOpen ? 'bg-red-600 hover:bg-red-700' : 'bg-green-600 hover:bg-green-700'} text-white">
+                                        ${gameState.buzzerOpen ? '🔴 قفل الكابس اللحظي' : '🟢 فتح الكابس للمتسابقين'}
+                                    </button>
+                                    <button onclick="triggerAction('resetBuzzer')" class="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-bold transition-all">🔄 تصفير وإعادة تفعيل الجولة</button>
+                                </div>
+                                
+                                <div class="panel-bg rounded-2xl p-4 flex flex-col gap-2">
+                                    <h3 class="text-sm font-bold text-gray-400 mb-1">إضافة وإدارة النقاط</h3>
+                                    <button onclick="addPoints('team1', 10)" class="w-full bg-red-600/20 hover:bg-red-600/40 text-red-300 border border-red-700 py-2 rounded-xl text-xs font-bold transition-all">+10 نقاط للأحمر</button>
+                                    <button onclick="addPoints('team2', 10)" class="w-full bg-blue-600/20 hover:bg-blue-600/40 text-blue-300 border border-blue-700 py-2 rounded-xl text-xs font-bold transition-all">+10 نقاط للأزرق</button>
+                                </div>
+                            </div>
+
+                            <div class="md:col-span-2 board-bg rounded-3xl p-6 shadow-xl flex flex-col gap-4">
+                                <div class="text-center">
+                                    <span class="bg-[#E28743] text-white text-xs px-3 py-1 rounded-full font-bold">${gameState.currentCategory || 'عام'}</span>
+                                    <h2 class="text-xl font-black mt-2 text-gray-100">${gameState.questionText}</h2>
+                                </div>
+
+                                <div class="flex flex-col gap-2 mt-2">
+                                    ${renderHostAnswers()}
+                                </div>
+                            </div>
                         </div>
                     </div>
-                );
-            }
-
-            if (!role) return (
-                <div className="flex flex-col items-center justify-center min-h-screen p-4 max-w-md mx-auto animate-fadeIn">
-                    <div className="text-center mb-6">
-                        <h1 className="text-6xl font-black text-[#F2C94C] tracking-wide">سياق</h1>
-                        <p className="text-blue-400 font-bold text-sm mt-1">النسخة المستقرة A.5.6</p>
-                    </div>
-                    <div className="bg-[#1B2344]/80 border border-[#2B3A6F] rounded-[28px] p-6 w-full flex flex-col gap-3 shadow-2xl backdrop-blur-md">
-                        <input className="bg-[#2D1F55] border border-[#443182] rounded-2xl text-center font-bold text-lg h-14 w-full text-white outline-none" 
-                               placeholder="أدخل رمز الغرفة" value={room} onChange={e => setRoom(e.target.value.toUpperCase())} />
-                        <button disabled={!room} onClick={() => setRole('host')} className="bg-[#E28743] hover:bg-[#CD7432] font-extrabold text-white h-14 rounded-2xl transition-all active:scale-95 shadow-md">دخول كمقدم اللعبة</button>
-                        <button disabled={!room} onClick={() => setRole('display')} className="bg-[#2F80ED] hover:bg-[#1B66D1] font-extrabold text-white h-14 rounded-2xl transition-all active:scale-95 shadow-md">شاشة العرض الكبرى</button>
-                    </div>
-                </div>
-            );
-
-            return <div className="p-6 text-center font-bold">تم تسجيل الدخول بنجاح كـ {role}</div>;
-        }
-
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
-    </script>
-
-    <!-- 🚨 كاشف الأعطال التلقائي (Watchdog) 🚨 -->
-    <script>
-        setTimeout(() => {
-            const rootEl = document.getElementById('root');
-            if (!rootEl || rootEl.innerHTML.trim() === "") {
-                rootEl.innerHTML = `
-                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: screen; height: 100vh; padding: 24px; text-align: center; font-family: sans-serif;" class="animate-fadeIn">
-                        <div style="background-color: rgba(69, 10, 10, 0.9); border: 1px solid #ef4444; border-radius: 16px; padding: 24px; max-width: 450px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
-                            <h2 style="color: #f87171; font-weight: 900; font-size: 20px; margin-bottom: 12px;">⚠️ تنبيه: المتصفح حجب تشغيل اللعبة</h2>
-                            <p style="color: #cbd5e1; font-size: 13px; line-height: 1.6; margin-bottom: 16px;">
-                                المتصفح لم يستطع معالجة الأكواد. هذا يعني أن هناك نقصاً أثناء نسخ الكود، أو أن شبكة الإنترنت لديك تحجب روابط مكتبات تشغيل واجهات (React / Babel).
-                            </p>
-                            <div style="background-color: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; text-align: right; font-size: 11px; font-family: monospace; color: #fca5a5; margin-bottom: 16px; direction: ltr; overflow-x: auto;">
-                                👉 Try pressing F12 -> Check 'Console' tab to see the exact red error.
+                `;
+            } else {
+                // تصميم واجهة شاشة العرض الكبرى
+                gameScreen.innerHTML = `
+                    <div class="max-w-6xl mx-auto flex flex-col gap-6 pt-6">
+                        <div class="flex justify-center gap-8">
+                            <div class="bg-red-600/20 border border-red-500 rounded-2xl px-6 py-3 text-center min-w-[140px] shadow-lg">
+                                <div class="text-xs text-red-300 font-bold">الفريق الأحمر</div>
+                                <div class="text-3xl font-black mt-1 text-white">${gameState.teams?.team1?.score || 0} ن</div>
                             </div>
-                            <button onclick="window.location.reload()" style="background-color: #dc2626; color: white; font-weight: bold; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer;">إعادة تحديث الصفحة</button>
+                            <div class="bg-blue-600/20 border border-blue-500 rounded-2xl px-6 py-3 text-center min-w-[140px] shadow-lg">
+                                <div class="text-xs text-blue-300 font-bold">الفريق الأزرق</div>
+                                <div class="text-3xl font-black mt-1 text-white">${gameState.teams?.team2?.score || 0} ن</div>
+                            </div>
+                        </div>
+
+                        <div class="board-bg rounded-[36px] p-8 max-w-4xl w-full mx-auto shadow-2xl border border-blue-900/60 flex flex-col gap-6 text-center">
+                            <div>
+                                <span class="bg-yellow-500 text-black text-xs font-black px-4 py-1 rounded-full uppercase tracking-widest">${gameState.currentCategory || 'سياق'}</span>
+                                <h2 class="text-2xl md:text-3xl font-black mt-4 leading-relaxed text-white">${gameState.questionText}</h2>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-3 mt-4 max-w-2xl mx-auto w-full">
+                                ${renderDisplayAnswers()}
+                            </div>
                         </div>
                     </div>
                 `;
             }
-        }, 2000);
+        }
+
+        // مساعد رندر الإجابات للمقدم للتحكم في الكشف
+        function renderHostAnswers() {
+            if (!gameState.currentAnswers || gameState.currentAnswers.length === 0) {
+                return `<p class="text-gray-500 text-sm py-4">لا توجد إجابات محملة حالياً في هذه الجولة.</p>`;
+            }
+            return gameState.currentAnswers.map((ans, idx) => {
+                const isRevealed = gameState.revealed && gameState.revealed[idx];
+                return `
+                    <div class="flex justify-between items-center p-3 rounded-xl border ${isRevealed ? 'bg-emerald-950/40 border-emerald-500 text-emerald-200' : 'bg-slate-900/60 border-slate-700 text-slate-400'}">
+                        <span class="text-sm font-bold">${idx + 1}. ${ans.text} (${ans.points} ن)</span>
+                        <button onclick="toggleAnswerReveal(${idx})" class="text-xs px-3 py-1 rounded-lg font-black transition-all ${isRevealed ? 'bg-red-900/60 text-red-200 hover:bg-red-900' : 'bg-emerald-600 text-white hover:bg-emerald-500'}">
+                            ${isRevealed ? 'إخفاء 👁️' : 'كشف 🔓'}
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // مساعد رندر الإجابات لشاشة العرض الكبرى (مخفية بالنقاط أو مكشوفة بالكامل)
+        function renderDisplayAnswers() {
+            if (!gameState.currentAnswers || gameState.currentAnswers.length === 0) {
+                return `<div class="text-slate-600 font-medium py-6">بانتظار بدء الجولة...</div>`;
+            }
+            return gameState.currentAnswers.map((ans, idx) => {
+                const isRevealed = gameState.revealed && gameState.revealed[idx];
+                if (isRevealed) {
+                    return `
+                        <div class="flex justify-between items-center h-14 px-6 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl border border-emerald-400/30 text-white font-black text-lg shadow-md animate-fadeIn">
+                            <span>${ans.text}</span>
+                            <span class="bg-black/20 px-3 py-0.5 rounded-md">${ans.points}+</span>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div class="flex justify-between items-center h-14 px-6 bg-[#131B3E] border border-[#23316B] rounded-xl text-slate-500 font-bold text-lg">
+                            <span>••••••••••••••••••••••••</span>
+                            <span class="bg-slate-900/40 px-3 py-0.5 rounded-md text-sm text-slate-600">؟</span>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        // وظائف التحكم والأكشن التفاعلية
+        function triggerAction(actionType) {
+            if (actionType === 'toggleBuzzer') {
+                db.ref(`rooms/${currentRoom}/buzzerOpen`).set(!gameState.buzzerOpen);
+            } else if (actionType === 'resetBuzzer') {
+                // إعادة تحميل جولة افتراضية مستقرة للتجربة الفورية
+                const resetData = {
+                    currentCategory: "السفر والسياحة",
+                    questionText: "أهم غرض يحرص المسافر على التأكد منه قبل التوجه للمطار؟",
+                    buzzerOpen: true,
+                    revealed: {},
+                    currentAnswers: [
+                        { text: "جواز السفر وتأشيرة الدخول", points: 50 },
+                        { text: "الجوال واللابتوب والشواحن", points: 22 },
+                        { text: "النقود وبطاقات الائتمان", points: 16 },
+                        { text: "تذاكر الطيران وحجز الفندق", points: 8 }
+                    ]
+                };
+                db.ref(`rooms/${currentRoom}`).update(resetData);
+            }
+        }
+
+        function toggleAnswerReveal(idx) {
+            const currentStatus = gameState.revealed && gameState.revealed[idx];
+            db.ref(`rooms/${currentRoom}/revealed/${idx}`).set(!currentStatus);
+        }
+
+        function addPoints(teamKey, amount) {
+            const currentScore = gameState.teams && gameState.teams[teamKey] && gameState.teams[teamKey].score ? gameState.teams[teamKey].score : 0;
+            db.ref(`rooms/${currentRoom}/teams/${teamKey}/score`).set(currentScore + amount);
+        }
     </script>
 </body>
 </html>
