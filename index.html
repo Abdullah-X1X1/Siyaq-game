@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لعبة سياق - النسخة A.5.5 المحمية</title>
+    <title>لعبة سياق - النسخة A.5.6 التشخيصية</title>
     
     <!-- استدعاء المكتبات المستقرة -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -11,7 +11,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- الفايربيز الكلاسيكي المضمون للمتصفحات -->
+    <!-- الفايربيز الكلاسيكي المضمون -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 
@@ -19,35 +19,38 @@
         body { background: radial-gradient(circle at center, #111A3A 0%, #070B19 100%); color: #FFFFFF; font-family: system-ui, -apple-system, sans-serif; }
         .panel-bg { background-color: #121B3D; border: 1px solid #1E2E69; }
         .board-bg { background-color: #0D1430; border: 1px solid #1E2E69; }
-        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes scaleUp { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .animate-fadeIn { animation: fadeIn 0.3s ease-out forwards; }
-        .animate-scaleUp { animation: scaleUp 0.2s ease-out forwards; }
-
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #070B19; }
-        ::-webkit-scrollbar-thumb { background: #1E2E69; border-radius: 4px; }
     </style>
 </head>
 <body class="min-h-screen select-none">
+    
+    <!-- الحاوية الرئيسية للعبة -->
     <div id="root"></div>
 
+    <!-- كود اللعبة البرمجي المحمي -->
     <script type="text/babel">
-        // إعدادات الاتصال بقاعدة البيانات
-        const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
-        if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
-        const db = firebase.database();
+        let db = null;
+        let bootError = null;
+
+        // فحص آمن لتحميل الفايربيز قبل تشغيل التطبيق
+        try {
+            if (typeof firebase !== 'undefined') {
+                const firebaseConfig = { databaseURL: "https://siyaq-rouyine-default-rtdb.firebaseio.com" };
+                if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+                db = firebase.database();
+            } else {
+                bootError = "فشل تحميل ملفات الفايربيز من الـ CDN. تحقق من اتصال الإنترنت أو قيود الحجب.";
+            }
+        } catch (e) {
+            bootError = "خطأ في تهيئة قاعدة البيانات: " + e.message;
+        }
 
         const TEAM_COLORS = {
-            team1: { name: "الفريق الأحمر", hex: "#EF4444" },
-            team2: { name: "الفريق الأزرق", hex: "#3B82F6" },
-            team3: { name: "الفريق الأخضر", hex: "#10B981" },
-            team4: { name: "الفريق البنفسجي", hex: "#8B5CF6" },
-            team5: { name: "الفريق البرتقالي", hex: "#F97316" },
-            team6: { name: "الفريق السماوي", hex: "#06B6D4" },
-            team7: { name: "الفريق الوردي", hex: "#EC4899" },
-            team8: { name: "الفريق الأصفر", hex: "#EAB308" }
+            team1: { name: "الفريق الأحمر", hex: "#EF4444" }, team2: { name: "الفريق الأزرق", hex: "#3B82F6" },
+            team3: { name: "الفريق الأخضر", hex: "#10B981" }, team4: { name: "الفريق البنفسجي", hex: "#8B5CF6" },
+            team5: { name: "الفريق البرتقالي", hex: "#F97316" }, team6: { name: "الفريق السماوي", hex: "#06B6D4" },
+            team7: { name: "الفريق الوردي", hex: "#EC4899" }, team8: { name: "الفريق الأصفر", hex: "#EAB308" }
         };
 
         const CURATED_ROUNDS = [
@@ -60,418 +63,81 @@
                     { text: "أتثاوب وأتمغط بالفراش", points: 13 },
                     { text: "أروح أركض للحمام وأتوضأ", points: 9 }
                 ]
-            },
-            {
-                category: "الحياة اليومية",
-                question: "وش الشيء اللي مستحيل تطلع من البيت بدونه وعادي ترجع لو نسيته؟",
-                answers: [
-                    { text: "الجوال أكيد", points: 55 },
-                    { text: "مفتاح السيارة", points: 23 },
-                    { text: "المحفظة / بطاقة الصراف", points: 15 },
-                    { text: "النظارة الشمسية", points: 7 }
-                ]
-            },
-            {
-                category: "الأكل والمطاعم",
-                question: "وش الإضافة اللي لو ما انحطت مع الشاورما تعتبر الجريمة بحق الأكل؟",
-                answers: [
-                    { text: "ثوم زيادة ويكون ثقيل", points: 58 },
-                    { text: "بطاطس مقلية مقمرة داخل الصاروخ", points: 22 },
-                    { text: "مخلل مالح يكسر الطعم", points: 13 },
-                    { text: "شطة حارة كريستال", points: 7 }
-                ]
             }
         ];
-
-        const initialRoomState = () => {
-            const defaultTeams = {};
-            for(let i=1; i<=8; i++) {
-                defaultTeams[`team${i}`] = { name: `فريق ${i}`, score: 0, errors: 0 };
-            }
-            return {
-                currentCategory: "", activeTeam: "", buzzerOpen: true, revealed: {0:false,1:false,2:false,3:false,4:false}, roundActive: false, roundNumber: 1, questionText: "", currentAnswers: [],
-                buzzerQueue: [], teams: defaultTeams
-            };
-        };
-
-        // فلتر الأمان لمنع انهيار الواجهة بسبب تشوهات بيانات الفايربيز
-        const sanitizeState = (data) => {
-            if (!data) return initialRoomState();
-            
-            const cleanTeams = {};
-            for(let i=1; i<=8; i++) {
-                const tKey = `team${i}`;
-                const fTeam = data.teams?.[tKey] || {};
-                cleanTeams[tKey] = {
-                    name: fTeam.name || `فريق ${i}`,
-                    score: Number(fTeam.score) || 0,
-                    errors: Number(fTeam.errors) || 0
-                };
-            }
-
-            const cleanAnswers = Array.isArray(data.currentAnswers) ? data.currentAnswers : 
-                                 (data.currentAnswers ? Object.values(data.currentAnswers) : []);
-            
-            const cleanQueue = Array.isArray(data.buzzerQueue) ? data.buzzerQueue : 
-                               (data.buzzerQueue ? Object.values(data.buzzerQueue) : []);
-
-            return {
-                currentCategory: data.currentCategory || "",
-                activeTeam: data.activeTeam || "",
-                buzzerOpen: data.buzzerOpen !== false,
-                revealed: data.revealed || {0:false,1:false,2:false,3:false,4:false},
-                roundActive: !!data.roundActive,
-                roundNumber: Number(data.roundNumber) || 1,
-                questionText: data.questionText || "",
-                currentAnswers: cleanAnswers,
-                buzzerQueue: cleanQueue,
-                teams: cleanTeams
-            };
-        };
 
         function App() {
             const [role, setRole] = React.useState(null);
             const [room, setRoom] = React.useState('');
-            const [gameState, setGameState] = React.useState(initialRoomState());
-            const [localTeamName, setLocalTeamName] = React.useState('');
-            const [showGithubMenu, setShowGithubMenu] = React.useState(false);
-            const [showContestantOptions, setShowContestantOptions] = React.useState(false);
+            const [gameState, setGameState] = React.useState({
+                currentCategory: "", activeTeam: "", buzzerOpen: true, revealed: {}, roundActive: false, questionText: "", currentAnswers: [], buzzerQueue: [], teams: {}
+            });
 
             React.useEffect(() => {
-                if (!room) return;
+                if (!room || !db) return;
                 const roomRef = db.ref(`rooms/${room}`);
-                
                 const handleData = (snapshot) => {
                     const data = snapshot.val();
-                    if (data) {
-                        setGameState(sanitizeState(data));
-                    } else if (role === 'host') {
-                        roomRef.set(initialRoomState());
-                    }
+                    if (data) setGameState(data);
                 };
-
                 roomRef.on('value', handleData);
                 return () => roomRef.off('value', handleData);
-            }, [room, role]);
+            }, [room]);
 
-            React.useEffect(() => {
-                if (role && role.startsWith('team') && gameState.teams?.[role]) {
-                    setLocalTeamName(gameState.teams[role].name);
-                }
-            }, [role]);
-
-            const updateDB = (updates) => db.ref(`rooms/${room}`).update(updates);
-
-            const pressBuzzer = (teamKey) => {
-                if (gameState.buzzerOpen && gameState.teams[teamKey].errors < 3) {
-                    const roomRef = db.ref(`rooms/${room}`);
-                    roomRef.transaction((currentData) => {
-                        if (!currentData) return currentData;
-                        if (!currentData.buzzerQueue) currentData.buzzerQueue = [];
-                        
-                        // تحويل الكيواني إلى مصفوفة حقيقية إذا تشوهت داخل الترانزاكشن
-                        if (!Array.isArray(currentData.buzzerQueue)) {
-                            currentData.buzzerQueue = Object.values(currentData.buzzerQueue);
-                        }
-                        
-                        if (!currentData.buzzerQueue.includes(teamKey)) currentData.buzzerQueue.push(teamKey);
-                        if (!currentData.activeTeam) currentData.activeTeam = currentData.buzzerQueue[0];
-                        return currentData;
-                    });
-                }
-            };
-
-            const deploySelectedRound = (roundObj) => {
-                const resetErrors = {};
-                Object.keys(gameState.teams).forEach(k => { resetErrors[`teams/${k}/errors`] = 0; });
-                updateDB({
-                    currentCategory: roundObj.category, questionText: roundObj.question, currentAnswers: roundObj.answers,
-                    roundActive: true, revealed: {0:false,1:false,2:false,3:false,4:false}, activeTeam: "", buzzerQueue: [], buzzerOpen: true, ...resetErrors
-                });
-                setShowGithubMenu(false);
-            };
-
-            const triggerWrongAnswer = () => {
-                if (gameState.activeTeam) {
-                    const currentErrors = gameState.teams[gameState.activeTeam].errors;
-                    const nextErrors = Math.min(currentErrors + 1, 3);
-                    const updates = { [`teams/${gameState.activeTeam}/errors`]: nextErrors };
-                    if (nextErrors >= 3) {
-                        const nextQueue = gameState.buzzerQueue.filter(t => t !== gameState.activeTeam);
-                        updates.buzzerQueue = nextQueue; updates.activeTeam = nextQueue.length > 0 ? nextQueue[0] : "";
-                    }
-                    updateDB(updates);
-                }
-            };
-
-            const passTurnToNextInQueue = () => {
-                if (gameState.buzzerQueue && gameState.buzzerQueue.length > 1) {
-                    const currentActive = gameState.activeTeam;
-                    const nextQueue = gameState.buzzerQueue.filter(t => t !== currentActive);
-                    updateDB({ buzzerQueue: nextQueue, activeTeam: nextQueue.length > 0 ? nextQueue[0] : "" });
-                } else {
-                    updateDB({ activeTeam: "", buzzerQueue: [] });
-                }
-            };
-
-            const clickRevealAnswer = (idx, points) => {
-                const updates = { [`revealed/${idx}`]: true };
-                if (gameState.activeTeam) {
-                    const currentScore = gameState.teams[gameState.activeTeam].score;
-                    updates[`teams/${gameState.activeTeam}/score`] = currentScore + points;
-                }
-                updateDB(updates);
-            };
-
-            if (!role) return (
-                <div className="flex flex-col items-center justify-center min-h-screen p-4 max-w-md mx-auto">
-                    <div className="text-center mb-6">
-                        <h1 className="text-6xl font-black text-[#F2C94C] tracking-wide filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.4)]">سياق</h1>
-                        <p className="text-blue-400/90 font-bold text-sm mt-2 tracking-widest">النسخة A.5.5</p>
-                    </div>
-
-                    <div className="bg-[#1B2344]/80 border border-[#2B3A6F] rounded-[28px] p-6 w-full flex flex-col gap-3.5 shadow-[0_12px_40px_rgba(0,0,0,0.5)] backdrop-blur-md">
-                        <div className="bg-[#2D1F55] border border-[#443182] rounded-2xl p-1 flex items-center h-14">
-                            <input className="bg-transparent text-center font-bold text-lg w-full text-white placeholder-slate-400/60 outline-none" 
-                                   placeholder="أدخل رمز الغرفة" value={room} onChange={e => setRoom(e.target.value.toUpperCase())} />
-                        </div>
-
-                        <button disabled={!room} onClick={() => setRole('host')}
-                                className="bg-[#E28743] hover:bg-[#CD7432] disabled:opacity-30 font-extrabold text-white h-14 rounded-2xl text-center text-base transition-all active:scale-95 shadow-md">
-                            دخول كمقدم اللعبة
-                        </button>
-
-                        <button disabled={!room} onClick={() => setRole('display')}
-                                className="bg-[#2F80ED] hover:bg-[#1B66D1] disabled:opacity-30 font-extrabold text-white h-14 rounded-2xl text-center text-base transition-all active:scale-95 shadow-md">
-                            شاشة العرض الكبرى
-                        </button>
-
-                        <button disabled={!room} onClick={() => setShowContestantOptions(!showContestantOptions)}
-                                className="bg-[#0091FF] hover:bg-[#0076D6] disabled:opacity-30 font-extrabold text-white h-14 rounded-2xl text-center text-base transition-all active:scale-95 shadow-md flex items-center justify-center gap-2">
-                            <span>دخول كمتسابق</span>
-                            <span className="text-xs opacity-70">{showContestantOptions ? '▲' : '▼'}</span>
-                        </button>
-
-                        {showContestantOptions && (
-                            <div className="grid grid-cols-2 gap-2 mt-2 p-2 bg-[#0C1126]/90 border border-blue-950 rounded-xl animate-fadeIn">
-                                {Object.keys(gameState.teams).map((tKey, idx) => {
-                                    const teamCol = TEAM_COLORS[tKey] || { hex: "#1E2E69" };
-                                    return (
-                                        <button key={tKey} onClick={() => setRole(tKey)}
-                                                className="p-2.5 rounded-xl text-xs font-black text-white text-center border transition-all hover:brightness-110 active:scale-95"
-                                                style={{ backgroundColor: teamCol.hex, borderColor: `${teamCol.hex}A0` }}>
-                                            {gameState.teams[tKey]?.name || `فريق ${idx + 1}`}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-
-            if (role.startsWith('team')) {
-                const myTurn = gameState.activeTeam === role;
-                const myColor = TEAM_COLORS[role]?.hex || '#0091FF';
+            // شاشة عرض الخطأ الداخلي إن وجد
+            if (bootError) {
                 return (
-                    <div className="flex flex-col justify-between min-h-screen p-4 max-w-2xl mx-auto w-full">
-                        <div className="panel-bg rounded-2xl p-4 flex flex-col gap-3 w-full shadow-md">
-                            <div className="flex justify-between items-center text-xs text-slate-400">
-                                <button onClick={() => setRole(null)} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-3 py-1 rounded-lg">🚪 خروج</button>
-                                <div className="flex gap-1">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className={`w-5 h-5 rounded flex items-center justify-center font-bold text-[10px] border ${gameState.teams[role]?.errors >= i ? 'bg-red-600 border-red-400 text-white' : 'bg-slate-900 border-slate-700 text-slate-600'}`}>X</div>
-                                    ))}
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2 bg-[#0B132B] p-2 rounded-xl border border-blue-950">
-                                <span className="text-xs text-blue-400 font-bold whitespace-nowrap">اسم الفريق:</span>
-                                <input className="bg-transparent text-white font-bold text-sm w-full outline-none" 
-                                       value={localTeamName} onChange={e => setLocalTeamName(e.target.value)} />
-                                <button onClick={() => updateDB({ [`teams/${role}/name`]: localTeamName.trim() })} className="bg-blue-600 text-white p-1.5 px-3 rounded-lg text-xs font-bold whitespace-nowrap">✔️ حفظ</button>
-                            </div>
-                            <div className="text-center p-2.5 rounded-xl text-xs font-black" style={{ backgroundColor: `${myColor}25`, color: myColor, border: `1px solid ${myColor}40` }}>
-                                🏆 رصيدكم الحالي: {gameState.teams[role]?.score || 0} نقطة
-                            </div>
-                        </div>
-
-                        {gameState.roundActive ? (
-                            <div className="board-bg rounded-2xl p-4 my-3 flex flex-col gap-4 shadow-lg">
-                                <div className="text-center">
-                                    <span className="text-[10px] bg-slate-800 px-2.5 py-0.5 rounded-full text-slate-400 mb-1 inline-block">{gameState.currentCategory}</span>
-                                    <h3 className="text-sm md:text-base font-black text-white leading-relaxed mt-1">{gameState.questionText}</h3>
-                                </div>
-                                <div className="grid grid-cols-1 gap-2">
-                                    {gameState.currentAnswers.map((ans, idx) => {
-                                        const isRevealed = gameState.revealed?.[idx];
-                                        return (
-                                            <div key={idx} className={`rounded-xl px-3 py-2.5 flex justify-between items-center text-xs font-bold border h-12
-                                                ${isRevealed ? 'bg-[#131C38] border-emerald-500/30 text-emerald-400' : 'bg-[#0B132B]/60 border-blue-950 text-slate-500'}`}>
-                                                <div>{isRevealed ? `${ans.points}+` : '?'}</div>
-                                                <div>{isRevealed ? ans.text : "•••••••••••••"}</div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="text-center text-slate-500 text-xs py-12">بانتظار انطلاق الجولة...</div>
-                        )}
-
-                        <div className="flex justify-center pb-4">
-                            <button onClick={() => pressBuzzer(role)} disabled={!gameState.buzzerOpen || gameState.activeTeam || gameState.teams[role]?.errors >= 3}
-                                    className={`w-44 h-44 rounded-full font-black text-xl shadow-2xl transition-all duration-75 border-4
-                                    ${myTurn ? 'scale-105 text-white animate-pulse' : 'active:scale-95 text-white'}`}
-                                    style={{ 
-                                        backgroundColor: myTurn ? myColor : (gameState.buzzerOpen && !gameState.activeTeam ? '#DC2626' : '#1E293B'),
-                                        borderColor: myTurn ? '#FFFFFF' : (gameState.buzzerOpen && !gameState.activeTeam ? '#EF4444' : '#334155')
-                                    }}>
-                                {myTurn ? 'أجب الآن!' : (gameState.buzzerOpen && !gameState.activeTeam ? 'إكبس!' : 'انتظر')}
-                            </button>
+                    <div className="flex items-center justify-center min-h-screen p-4 text-center max-w-md mx-auto">
+                        <div className="bg-red-950/80 border border-red-500 rounded-2xl p-6 shadow-2xl">
+                            <h2 className="text-xl font-black text-red-400 mb-2">⚠️ تعذر تشغيل النظام الداخلي</h2>
+                            <p className="text-xs text-slate-300 font-mono bg-black/30 p-3 rounded-xl text-right overflow-x-auto">{bootError}</p>
                         </div>
                     </div>
                 );
             }
 
-            const renderMainDashboard = (isHostMode) => {
-                const activeTeamColor = gameState.activeTeam ? (TEAM_COLORS[gameState.activeTeam]?.hex || '#EF4444') : '#1E293B';
-                return (
-                    <div className="p-4 md:p-6 min-h-screen flex flex-col justify-between max-w-[1600px] mx-auto relative animate-fadeIn">
-                        <div className="panel-bg rounded-2xl p-4 flex flex-wrap justify-between items-center gap-4 mb-4 shadow-xl">
-                            <div className="flex items-center gap-3">
-                                <button onClick={() => setRole(null)} className="bg-red-950/60 hover:bg-red-900 border border-red-800 text-red-300 font-bold px-4 py-1.5 rounded-xl text-sm">🚪 خروج</button>
-                                <span className="bg-blue-600 text-white font-bold px-4 py-1.5 rounded-xl text-sm">{isHostMode ? 'لوحة المقدم' : 'شاشة العرض الكبرى'}</span>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 flex-wrap max-w-3xl justify-center">
-                                {Object.keys(gameState.teams).map(tKey => {
-                                    const isSelected = gameState.activeTeam === tKey;
-                                    const isBlocked = gameState.teams[tKey]?.errors >= 3;
-                                    const teamCol = TEAM_COLORS[tKey] || { hex: '#FFF' };
-                                    return (
-                                        <div key={tKey} className="px-3 py-1.5 rounded-xl text-xs font-black border transition-all flex items-center gap-1.5"
-                                             style={{ 
-                                                 backgroundColor: isSelected ? teamCol.hex : '#1C2646', 
-                                                 borderColor: isSelected ? '#FFF' : `${teamCol.hex}40`,
-                                                 color: isSelected ? '#000' : '#FFF',
-                                                 opacity: isBlocked ? 0.3 : 1
-                                             }}>
-                                            <span>{gameState.teams[tKey]?.name}: {gameState.teams[tKey]?.score || 0} ن</span>
-                                            {(gameState.teams[tKey]?.errors || 0) > 0 && <span className="text-red-500 font-black">({ "X".repeat(gameState.teams[tKey].errors) })</span>}
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                            <div className="font-bold text-amber-400 text-sm font-mono">الرمز: <span className="text-white text-base">{room}</span></div>
-                        </div>
-
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start my-auto w-full">
-                            <div className="lg:col-span-4 flex flex-col gap-4 w-full">
-                                <div className="panel-bg rounded-[24px] p-5 shadow-lg flex flex-col gap-4 text-center">
-                                    <h4 className="text-sm font-black text-slate-300 tracking-wide">حالة الكبس اللحظية</h4>
-                                    
-                                    {gameState.activeTeam ? (
-                                        <div className="rounded-2xl p-6 text-white shadow-inner flex flex-col justify-center items-center h-32 transition-all duration-300 animate-scaleUp"
-                                             style={{ backgroundColor: activeTeamColor }}>
-                                            <span className="text-xs font-bold opacity-90 mb-1 tracking-wider">أسرع كبسة معتمدة</span>
-                                            <h3 className="text-2xl font-black">اللاعب: {gameState.teams[gameState.activeTeam]?.name}</h3>
-                                            <span className="text-xs opacity-85 mt-1 font-bold">(فريق {gameState.activeTeam.replace('team', '')})</span>
-                                        </div>
-                                    ) : (
-                                        <div className="rounded-2xl p-6 text-slate-500 bg-[#0B132B] border-2 border-dashed border-slate-800/80 flex flex-col justify-center items-center h-32">
-                                            <span className="text-xs font-medium">بانتظار ضغط الأزرار من المتسابقين...</span>
-                                        </div>
-                                    )}
-
-                                    {isHostMode && (
-                                        <button onClick={() => updateDB({ activeTeam: "", buzzerQueue: [], buzzerOpen: true })} 
-                                                className="w-full bg-[#1F40AA] hover:bg-blue-700 text-white font-extrabold py-3 rounded-xl text-sm transition-all active:scale-95 shadow-md">
-                                            تصفير وتفعيل الكبس للجميع
-                                        </button>
-                                    )}
-                                </div>
-
-                                {isHostMode && (
-                                    <div className="panel-bg rounded-[24px] p-4 shadow-lg flex flex-col gap-3">
-                                        <h4 className="text-xs font-bold text-amber-400 uppercase">إدارة الأسئلة</h4>
-                                        <div className="relative">
-                                            <button onClick={() => setShowGithubMenu(!showGithubMenu)} className="w-full bg-[#1F2937] text-white font-bold p-3 rounded-xl text-xs flex justify-between">
-                                                <span>📂 تصفح وبحث في بنك المواضيع</span>
-                                                <span>▼</span>
-                                            </button>
-                                            {showGithubMenu && (
-                                                <div className="absolute right-0 top-full mt-2 w-full bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-50 p-2 max-h-60 overflow-y-auto">
-                                                    {CURATED_ROUNDS.map((round, rIdx) => (
-                                                        <button key={rIdx} onClick={() => deploySelectedRound(round)} className="w-full text-right p-2 text-xs text-slate-300 hover:bg-blue-900/40 rounded border-b border-slate-800 flex flex-col">
-                                                            <span className="text-blue-400 font-bold">{round.category}</span>
-                                                            <span>{round.question}</span>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                        {gameState.roundActive && (
-                                            <div className="flex flex-col gap-2 pt-2 border-t border-slate-800">
-                                                <button onClick={triggerWrongAnswer} className="w-full bg-red-600 text-white font-bold p-2.5 rounded-xl text-xs">❌ إحتساب خطأ (X)</button>
-                                                <button onClick={passTurnToNextInQueue} className="w-full bg-indigo-600 text-white font-bold p-2.5 rounded-xl text-xs">➡️ تمرير للدور التالي</button>
-                                                <button onClick={() => updateDB({ roundActive: false, activeTeam: "" })} className="w-full bg-amber-500 text-slate-950 font-bold p-2.5 rounded-xl text-xs mt-2">🏁 إنهاء وتجميد الجولة</button>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="lg:col-span-8 w-full">
-                                {!gameState.roundActive ? (
-                                    <div className="board-bg rounded-3xl p-12 text-center flex flex-col items-center justify-center min-h-[400px]">
-                                        <p className="text-slate-400 text-base font-medium animate-pulse">قم باختيار موضوع الجولة من القائمة للبدء...</p>
-                                    </div>
-                                ) : (
-                                    <div className="board-bg rounded-3xl p-6 md:p-8 shadow-2xl">
-                                        <div className="text-center mb-6">
-                                            <span className="bg-amber-500 text-slate-950 font-extrabold text-xs px-4 py-1 rounded-full">{gameState.currentCategory}</span>
-                                            <h2 className="text-xl md:text-3xl font-black text-white mt-4 leading-snug">{gameState.questionText}</h2>
-                                        </div>
-
-                                        <div className="flex justify-center gap-2 mb-6">
-                                            {[1, 2, 3].map(i => {
-                                                const hasError = gameState.activeTeam && gameState.teams?.[gameState.activeTeam]?.errors >= i;
-                                                return (
-                                                    <div key={i} className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-lg border-2 transition-all 
-                                                        ${hasError ? 'bg-red-600 border-red-400 text-white animate-bounce' : 'bg-[#0B132B] border-blue-900/60 text-slate-800'}`}>X</div>
-                                                );
-                                            })}
-                                        </div>
-
-                                        <div className="grid grid-cols-1 gap-3 max-w-3xl mx-auto w-full">
-                                            {gameState.currentAnswers.map((ans, idx) => {
-                                                const isRevealed = gameState.revealed?.[idx];
-                                                return (
-                                                    <div key={idx} onClick={() => isHostMode && clickRevealAnswer(idx, ans.points)}
-                                                         className={`rounded-xl p-4 flex justify-between items-center h-16 border text-sm md:text-base font-bold transition-all
-                                                            ${isRevealed ? 'bg-[#131C38] border-emerald-500/40 text-emerald-400' : 'bg-[#0B132B]/80 border-blue-950 text-slate-400'} ${isHostMode ? 'cursor-pointer hover:border-blue-700' : ''}`}>
-                                                        <div>{isRevealed ? <span className="text-amber-400 font-mono font-black">{ans.points}+</span> : isHostMode ? <span className="text-xs text-slate-500">({ans.points}+)</span> : "?" }</div>
-                                                        <div className="flex items-center gap-3 flex-row-reverse">
-                                                            <span className="w-6 h-6 rounded-full bg-blue-900/30 text-blue-400 text-xs flex items-center justify-center border border-blue-800/40">{idx + 1}</span>
-                                                            <span>{isRevealed || isHostMode ? ans.text : "•••••••••••••"}</span>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+            if (!role) return (
+                <div className="flex flex-col items-center justify-center min-h-screen p-4 max-w-md mx-auto animate-fadeIn">
+                    <div className="text-center mb-6">
+                        <h1 className="text-6xl font-black text-[#F2C94C] tracking-wide">سياق</h1>
+                        <p className="text-blue-400 font-bold text-sm mt-1">النسخة المستقرة A.5.6</p>
                     </div>
-                );
-            };
+                    <div className="bg-[#1B2344]/80 border border-[#2B3A6F] rounded-[28px] p-6 w-full flex flex-col gap-3 shadow-2xl backdrop-blur-md">
+                        <input className="bg-[#2D1F55] border border-[#443182] rounded-2xl text-center font-bold text-lg h-14 w-full text-white outline-none" 
+                               placeholder="أدخل رمز الغرفة" value={room} onChange={e => setRoom(e.target.value.toUpperCase())} />
+                        <button disabled={!room} onClick={() => setRole('host')} className="bg-[#E28743] hover:bg-[#CD7432] font-extrabold text-white h-14 rounded-2xl transition-all active:scale-95 shadow-md">دخول كمقدم اللعبة</button>
+                        <button disabled={!room} onClick={() => setRole('display')} className="bg-[#2F80ED] hover:bg-[#1B66D1] font-extrabold text-white h-14 rounded-2xl transition-all active:scale-95 shadow-md">شاشة العرض الكبرى</button>
+                    </div>
+                </div>
+            );
 
-            if (role === 'host') return renderMainDashboard(true);
-            if (role === 'display') return renderMainDashboard(false);
+            return <div className="p-6 text-center font-bold">تم تسجيل الدخول بنجاح كـ {role}</div>;
         }
 
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+
+    <!-- 🚨 كاشف الأعطال التلقائي (Watchdog) 🚨 -->
+    <script>
+        setTimeout(() => {
+            const rootEl = document.getElementById('root');
+            if (!rootEl || rootEl.innerHTML.trim() === "") {
+                rootEl.innerHTML = `
+                    <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: screen; height: 100vh; padding: 24px; text-align: center; font-family: sans-serif;" class="animate-fadeIn">
+                        <div style="background-color: rgba(69, 10, 10, 0.9); border: 1px solid #ef4444; border-radius: 16px; padding: 24px; max-width: 450px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+                            <h2 style="color: #f87171; font-weight: 900; font-size: 20px; margin-bottom: 12px;">⚠️ تنبيه: المتصفح حجب تشغيل اللعبة</h2>
+                            <p style="color: #cbd5e1; font-size: 13px; line-height: 1.6; margin-bottom: 16px;">
+                                المتصفح لم يستطع معالجة الأكواد. هذا يعني أن هناك نقصاً أثناء نسخ الكود، أو أن شبكة الإنترنت لديك تحجب روابط مكتبات تشغيل واجهات (React / Babel).
+                            </p>
+                            <div style="background-color: rgba(0,0,0,0.4); padding: 12px; border-radius: 8px; text-align: right; font-size: 11px; font-family: monospace; color: #fca5a5; margin-bottom: 16px; direction: ltr; overflow-x: auto;">
+                                👉 Try pressing F12 -> Check 'Console' tab to see the exact red error.
+                            </div>
+                            <button onclick="window.location.reload()" style="background-color: #dc2626; color: white; font-weight: bold; padding: 10px 24px; border: none; border-radius: 8px; cursor: pointer;">إعادة تحديث الصفحة</button>
+                        </div>
+                    </div>
+                `;
+            }
+        }, 2000);
     </script>
 </body>
 </html>
